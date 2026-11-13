@@ -8,6 +8,7 @@
 import React from "react";
 import { Composition, Folder, Still } from "remotion";
 import { LogoSting, STING_FRAMES } from "./compositions/LogoSting";
+import { Turntable, type TurntableProps } from "./compositions/Turntable";
 import { Card, Lockup, Palette, type CardProps, type LockupProps } from "./compositions/Stills";
 import { Cutdown } from "./compositions/Cutdown";
 import type { FilmProps } from "./compositions/Film";
@@ -69,6 +70,26 @@ export const RemotionRoot: React.FC = () => {
           defaultProps={{ audio: null }}
         />
       ))}
+      <Folder name="ThreeD">
+        <Composition
+          id="Turntable"
+          component={Turntable}
+          durationInFrames={180}
+          fps={FPS}
+          width={1080}
+          height={1080}
+          defaultProps={{ model: "logo-mark-two-tone", ground: "paper", spin: 360, elevation: 12 } satisfies TurntableProps}
+        />
+        <Composition
+          id="Turntable-Wide"
+          component={Turntable}
+          durationInFrames={180}
+          fps={FPS}
+          width={1920}
+          height={1080}
+          defaultProps={{ model: "logo-plinth", ground: "paper", spin: 60, elevation: 14 } satisfies TurntableProps}
+        />
+      </Folder>
       <Folder name="Stills">
         <Still
           id="Lockup"

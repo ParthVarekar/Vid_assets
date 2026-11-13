@@ -29,6 +29,7 @@ node --no-warnings scripts/assets/build-library.mjs --no-render  # skip the Remo
 | `frames/16x9`, `9x16`, `1x1` | One key frame per scene in each format | Posters, thumbnails, presentation stills |
 | `frames/logo-sting/` | Storyboard of the logo sting | Animation is `code/compositions/LogoSting.tsx` |
 | `code/` | The whole animation system: line, quill and logo reveal, type, surfaces, header, UI artefacts, layout, easing, timeline, scenes, compositions, tools | Copy into any Remotion 4 project. Needs `@remotion/paths`, `@remotion/media`, `@remotion/fonts`, `@remotion/google-fonts` |
+| `3d/` | 15 code-built 3D models as .glb, React Three Fiber component, turntable composition, previews, browser viewer | See `3d/README.md`. Opens in Blender, Spline, Unity, Unreal, three.js |
 | `reference/` | Official brand sources, logo trace checks, portfolio screens | Portfolio screens belong to ProtoVinci's clients. Check clearance before using them in ads |
 
 ## Most reusable pieces
