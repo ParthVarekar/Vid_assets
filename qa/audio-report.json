@@ -1,0 +1,20 @@
+[
+  {
+    "file": "public/assets/audio/score-master.wav",
+    "seconds": 60,
+    "integratedLufs": -14.03,
+    "samplePeakDbfs": -2.2,
+    "preLimiterPeakDbfs": 2.78,
+    "limiterActiveFraction": 0.2703,
+    "appliedGainDb": 5.93
+  },
+  {
+    "file": "public/assets/audio/score-cutdown.wav",
+    "seconds": 15,
+    "integratedLufs": -14.04,
+    "samplePeakDbfs": -2.2,
+    "preLimiterPeakDbfs": 1.4,
+    "limiterActiveFraction": 0.2951,
+    "appliedGainDb": 5.14
+  }
+]

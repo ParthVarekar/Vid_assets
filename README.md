@@ -1,54 +1,45 @@
-# Remotion video
+# ProtoVinci — "Off the Page"
 
-<p align="center">
-  <a href="https://github.com/remotion-dev/logo">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-dark.apng">
-      <img alt="Animated Remotion Logo" src="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-light.gif">
-    </picture>
-  </a>
-</p>
+A 60-second brand film for [ProtoVinci](https://protovinci.vercel.app/), built entirely as code: Remotion (React/SVG) for picture, a Node synthesiser for the original score. One red-chalk line, drawn by the brand's quill, leaves the notebook page and becomes working software: **Build. Automate. Scale.**
 
-Welcome to your Remotion project!
+## Deliverables (`renders/`)
 
-## Commands
+| File | Format |
+| --- | --- |
+| `protovinci-off-the-page-16x9.mp4` | Master, 1920×1080, 60 s |
+| `protovinci-off-the-page-9x16.mp4` | Vertical, 1080×1920, 60 s |
+| `protovinci-off-the-page-1x1.mp4` | Square, 1080×1080, 60 s |
+| `protovinci-cutdown-15s-16x9.mp4` / `-9x16.mp4` | 15 s cutdowns |
 
-**Install Dependencies**
+These are web encodes (H.264, AAC, fast-start). The higher-quality CRF 16 masters (130–230 MB each) are not in git; `npm run render` regenerates them into `renders/masters/`.
 
-```console
-npm i --loglevel=error
+Audio: original, synthesised, no third-party material. Measured −14.0 LUFS, true peak ≈ −1 dBTP.
+
+## Run it
+
+```bash
+npm install
+npm run dev          # Remotion Studio
+npm run render       # all five deliverables
+npm run audio        # re-render the score from src/timeline.ts
+npm run audio:check  # loudness / spectrogram report
+npm run assets       # re-trace the logo, rebuild textures
 ```
 
-**Start Preview**
+Needs Node 24+ and FFmpeg on PATH (for the web encodes only).
 
-```console
-npm run dev
-```
+## Structure
 
-**Render video**
+- `src/timeline.ts` is the single clock (100 BPM, 18 frames a beat). Picture and score both read it, so they stay in sync.
+- `src/scenes/` six scenes; `src/compositions/` master and cutdown; `src/components/` line, quill, type, artefacts; `src/utilities/layout.ts` per-format layouts (9:16 and 1:1 are laid out natively, not cropped).
+- `scripts/audio/` score synthesis; `scripts/qa/` contact sheets and audio analysis; `scripts/higgsfield/` optional generation script.
+- `research/`, `planning/` brand, creative and production research, strategy, storyboard, plan, and `planning/handoff.md` (status and known gaps).
+- `public/assets/` brand assets, Switzer fonts (from the brand's site), score WAVs.
 
-```console
-npx remotion render
-```
+## Known limits
 
-**Upgrade Remotion**
-
-```console
-npx remotion upgrade
-```
-
-## Docs
-
-Get started with Remotion by reading the [fundamentals page](https://www.remotion.dev/docs/the-fundamentals).
-
-## Help
-
-We provide help on our [Discord server](https://discord.gg/6VzzNDwUwV).
-
-## Issues
-
-Found an issue with Remotion? [File an issue here](https://github.com/remotion-dev/remotion/issues/new).
-
-## License
-
-Note that for some entities a company license is needed. [Read the terms here](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).
+- **Higgsfield was not used for media.** The account had 0 credits, so no generated plates, music or voice exist. `scripts/higgsfield/generate-plates.ps1` is validated against cost estimates but never run.
+- **The score was verified by measurement only.** Its author cannot listen. A person should audition it before publishing.
+- **The Proof scene shows real client project screens** from ProtoVinci's own public portfolio. Confirm clearance for advertising use, or set `showWork` to `false`.
+- The logo is traced from the 400 px avatar, the largest published file. A vector original from the agency would be sharper.
+- Planning docs describe the original design; `planning/handoff.md` lists where the build diverged.

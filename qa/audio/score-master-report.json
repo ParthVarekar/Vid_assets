@@ -1,0 +1,145 @@
+{
+  "file": "public/assets/audio/score-master.wav",
+  "seconds": 60,
+  "sampleRate": 48000,
+  "bits": 24,
+  "integratedLufs": -14.03,
+  "loudnessRangeLu": 8.3,
+  "samplePeakDbfs": -2.2,
+  "truePeakDbtpEstimate": -1.04,
+  "spectralBalance": {
+    "sub <60": "15.5%",
+    "bass 60-250": "34.6%",
+    "low-mid 250-1k": "43.2%",
+    "mid 1-4k": "4.0%",
+    "high 4-10k": "1.2%",
+    "air >10k": "1.5%"
+  },
+  "bars": [
+    {
+      "bar": 1,
+      "lufs": -20.2,
+      "peakDb": -9
+    },
+    {
+      "bar": 2,
+      "lufs": -22.6,
+      "peakDb": -12.6
+    },
+    {
+      "bar": 3,
+      "lufs": -22.9,
+      "peakDb": -9.8
+    },
+    {
+      "bar": 4,
+      "lufs": -18.2,
+      "peakDb": -6.6
+    },
+    {
+      "bar": 5,
+      "lufs": -17,
+      "peakDb": -7.8
+    },
+    {
+      "bar": 6,
+      "lufs": -13.8,
+      "peakDb": -2.2
+    },
+    {
+      "bar": 7,
+      "lufs": -12.8,
+      "peakDb": -2.2
+    },
+    {
+      "bar": 8,
+      "lufs": -12.1,
+      "peakDb": -2.2
+    },
+    {
+      "bar": 9,
+      "lufs": -12.3,
+      "peakDb": -2.2
+    },
+    {
+      "bar": 10,
+      "lufs": -12.4,
+      "peakDb": -2.2
+    },
+    {
+      "bar": 11,
+      "lufs": -15.9,
+      "peakDb": -3.2
+    },
+    {
+      "bar": 12,
+      "lufs": -14.9,
+      "peakDb": -2.8
+    },
+    {
+      "bar": 13,
+      "lufs": -14.3,
+      "peakDb": -3.3
+    },
+    {
+      "bar": 14,
+      "lufs": -14.8,
+      "peakDb": -2.2
+    },
+    {
+      "bar": 15,
+      "lufs": -14.3,
+      "peakDb": -3.2
+    },
+    {
+      "bar": 16,
+      "lufs": -12.7,
+      "peakDb": -2.2
+    },
+    {
+      "bar": 17,
+      "lufs": -11.8,
+      "peakDb": -2.2
+    },
+    {
+      "bar": 18,
+      "lufs": -11.8,
+      "peakDb": -2.2
+    },
+    {
+      "bar": 19,
+      "lufs": -11.4,
+      "peakDb": -2.2
+    },
+    {
+      "bar": 20,
+      "lufs": -16.1,
+      "peakDb": -4.4
+    },
+    {
+      "bar": 21,
+      "lufs": -17.7,
+      "peakDb": -7.7
+    },
+    {
+      "bar": 22,
+      "lufs": -18.8,
+      "peakDb": -8.1
+    },
+    {
+      "bar": 23,
+      "lufs": -10.9,
+      "peakDb": -2.2
+    },
+    {
+      "bar": 24,
+      "lufs": -14.6,
+      "peakDb": -3.8
+    },
+    {
+      "bar": 25,
+      "lufs": -16.6,
+      "peakDb": -4.2
+    }
+  ]
+}

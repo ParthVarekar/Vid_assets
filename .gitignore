@@ -5,3 +5,10 @@ dist
 
 # Ignore the output video from Git but not videos you import into src/.
 out
+
+# Large CRF 16 masters: regenerate with npm run render
+renders/masters/
+qa/stills/
+
+# Reinstallable with: npx skills add (see skills-lock.json)
+.agents/
