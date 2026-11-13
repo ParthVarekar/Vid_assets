@@ -1,5 +1,7 @@
 # Handoff — what is done, what is left
 
+> **Final status (13 Nov 2026):** all five deliverables are rendered, probed (resolution, duration, codecs correct) and pushed. Items 1–5 below were completed in a reduced form: master and square were reviewed at about 15–50 frames each, 9:16 at 18, the cutdown at 25 plus a final 12 from the delivered file. The vertical version was not re-reviewed after its last small fixes (label position, proof-card travel). Still open: item 6 (a person must listen to the score), item 7 (documents below still describe the original design), and the Higgsfield and client-clearance blockers. A fuller frame-by-frame review of 9:16 and 1:1 would be the next quality step.
+
 Written 13 November 2026, partway through production, so the remaining steps can be finished by anyone (or any model) without the earlier conversation. Tick items off as they are done and keep this file truthful.
 
 ## State of the project
