@@ -1,0 +1,19 @@
+{
+  "paper": "#EEEBE4",
+  "paperBright": "#F7F5F0",
+  "taupe": "#A69A8A",
+  "taupeLight": "#DFD8CE",
+  "ink": "#09090B",
+  "inkSoft": "#27272A",
+  "graphite": "#6B7280",
+  "zinc": "#9898A3",
+  "rule": "#E4E4E7",
+  "white": "#FFFFFF",
+  "night": "#09090B",
+  "nightCard": "#141417",
+  "nightRaise": "#1C1C21",
+  "nightText": "#F4F4F5",
+  "nightMuted": "#8B8B95",
+  "sanguine": "#C4472F",
+  "sanguineBright": "#E8583C"
+}

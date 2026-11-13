@@ -12,3 +12,4 @@ qa/stills/
 
 # Reinstallable with: npx skills add (see skills-lock.json)
 .agents/
+qa/sheets/lib-*.jpg

@@ -1,0 +1,42 @@
+/* ProtoVinci film tokens. Sanguine is reserved for the line: never fill large areas with it. */
+@font-face { font-family: "Switzer"; src: url("../../fonts/Switzer-Medium.woff2") format("woff2"); font-weight: 100 500; }
+@font-face { font-family: "Switzer"; src: url("../../fonts/Switzer-Semibold.woff2") format("woff2"); font-weight: 501 650; }
+@font-face { font-family: "Switzer"; src: url("../../fonts/Switzer-Bold.woff2") format("woff2"); font-weight: 651 900; }
+
+:root {
+  --pv-paper: #EEEBE4;
+  --pv-paper-bright: #F7F5F0;
+  --pv-taupe: #A69A8A;
+  --pv-taupe-light: #DFD8CE;
+  --pv-ink: #09090B;
+  --pv-ink-soft: #27272A;
+  --pv-graphite: #6B7280;
+  --pv-zinc: #9898A3;
+  --pv-rule: #E4E4E7;
+  --pv-white: #FFFFFF;
+  --pv-night: #09090B;
+  --pv-night-card: #141417;
+  --pv-night-raise: #1C1C21;
+  --pv-night-text: #F4F4F5;
+  --pv-night-muted: #8B8B95;
+  --pv-sanguine: #C4472F;
+  --pv-sanguine-bright: #E8583C;
+
+  --pv-font-sans: "Switzer", system-ui, sans-serif;
+  --pv-font-mono: "Geist Mono", ui-monospace, monospace;
+  --pv-track-display: -0.045em;
+  --pv-track-title: -0.035em;
+  --pv-track-body: -0.015em;
+  --pv-track-mono: 0.04em;
+  --pv-track-mono-wide: 0.14em;
+
+  --pv-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --pv-ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  --pv-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --pv-ease-pen: cubic-bezier(0.45, 0, 0.2, 1);
+  --pv-ease-in: cubic-bezier(0.6, 0, 0.9, 0.3);
+
+  /* 100 BPM grid at 30 fps */
+  --pv-beat: 600ms;
+  --pv-bar: 2400ms;
+}
