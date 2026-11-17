@@ -96,8 +96,9 @@ const pathToShapes = (d: string, toXY: (x: number, y: number) => [number, number
       i++;
     }
   }
-  // Potrace writes outer contours and holes with opposite winding.
-  return sp.toShapes(true);
+  // Potrace writes outer contours and holes with opposite winding; since
+  // three r18x, toShapes() detects hole winding by itself.
+  return sp.toShapes();
 };
 
 /** Rounded rectangle centred on the origin. */
