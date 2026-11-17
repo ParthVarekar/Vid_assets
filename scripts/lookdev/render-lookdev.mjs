@@ -37,12 +37,41 @@ const t0 = Date.now();
 const serveUrl = await bundle({ entryPoint: path.resolve("src/index.ts") });
 console.log(`bundled in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 
+// Above about 2500 px wide the GPU can lose the WebGL context and the canvas
+// comes back empty (only the backdrop). Cap supersampling for wide frames, and
+// check every frame actually has a bird in it.
+const MAX_W = 2400;
+/**
+ * True when the frame's centre has no detail: no bird was drawn. Measures the mean
+ * difference between neighbouring pixels, so smooth backdrop gradients score ~0
+ * and fur scores high.
+ */
+const isEmpty = async (file) => {
+  const img = sharp(file);
+  const { width, height } = await img.metadata();
+  const { data, info } = await img
+    .extract({ left: Math.round(width * 0.25), top: Math.round(height * 0.25), width: Math.round(width * 0.5), height: Math.round(height * 0.5) })
+    .resize(400, null)
+    .greyscale()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  let sum = 0;
+  for (let y = 0; y < info.height; y++) for (let x = 1; x < info.width; x++) sum += Math.abs(data[y * info.width + x] - data[y * info.width + x - 1]);
+  return sum / (info.height * (info.width - 1)) < 0.8;
+};
+
 const times = [];
 const still = async (id, frame, file) => {
   const composition = await selectComposition({ serveUrl, id, inputProps, chromiumOptions: { gl: "angle" } });
   const raw = path.join(outDir, `_raw-${file}`);
+  const sc = Math.min(scale, MAX_W / composition.width);
   const s = Date.now();
-  await renderStill({ serveUrl, composition, inputProps, frame, output: raw, imageFormat: "png", scale, chromiumOptions: { gl: "angle" }, overwrite: true });
+  for (let attempt = 1; ; attempt++) {
+    await renderStill({ serveUrl, composition, inputProps, frame, output: raw, imageFormat: "png", scale: sc, chromiumOptions: { gl: "angle" }, overwrite: true });
+    if (!(await isEmpty(raw))) break;
+    if (attempt === 3) throw new Error(`${file}: the 3D canvas rendered empty three times`);
+    console.log(`${file}: empty frame, retrying`);
+  }
   const ms = Date.now() - s;
   times.push({ id, frame, ms });
   const dst = path.join(outDir, file);

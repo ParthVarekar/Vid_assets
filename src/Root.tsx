@@ -133,6 +133,17 @@ export const RemotionRoot: React.FC = () => {
             defaultProps={{ mode: "closeup", bird: b, yaw: 0, spin: 0, quality: "final" } satisfies LookdevProps}
           />
         ))}
+        {/* Eye macro for checking irises and lids; pose comes from input props. */}
+        {(["quill", "ink", "chalk"] as const).map((b) => (
+          <Still
+            key={`eyes-${b}`}
+            id={`Eyes-${b[0].toUpperCase()}${b.slice(1)}`}
+            component={Lookdev}
+            width={1920}
+            height={1080}
+            defaultProps={{ mode: "eyes", bird: b, yaw: 0, spin: 0, quality: "final", ground: "black" } satisfies LookdevProps}
+          />
+        ))}
         <Composition
           id="Lookdev-Lineup"
           component={Lookdev}

@@ -7,6 +7,7 @@ Reference images of Quill, Ink and Chalk, rendered from the 3D models in `src/wo
 | `turnaround-sheet.jpg` | Each bird from the front, three-quarter, side and back | `node scripts/lookdev/render-lookdev.mjs out/lookdev/o7 --scale=2` |
 | `lineup.jpg` | The trio side by side on the studio sweep | `Lookdev-Lineup` composition |
 | `quill-closeup.jpg`, `ink-closeup.jpg`, `chalk-closeup.jpg` | Face close-ups: eyes, beak, fur | `Closeup-Quill`, `Closeup-Ink`, `Closeup-Chalk` |
+| `eye-sheet.jpg` | Eye macros on black: open, half blink, look up-left, angry squint, worried and wide | `node scripts/lookdev/render-eyes.mjs out/lookdev/eyes` |
 | `expressions.jpg` | All 12 expressions, every bird | `PoseSheet-Expressions` |
 | `gestures.jpg` | All 12 gestures, every bird, turned 20° | `PoseSheet-Gestures` |
 | `rig-channels.jpg` | Each rig channel at its minimum, default and maximum (Quill) | `RigSheet`, via `npm run docs:rig` |

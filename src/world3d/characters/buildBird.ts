@@ -19,6 +19,7 @@ import { createShellMaterial, createStrandMaterial, strandTemplate, type FurLigh
 import type { Secondary } from "../anim/evaluate";
 import { restValues, type RigValues } from "../rig/schema";
 import type { BirdConfig } from "./config";
+import { createCornea, createEyeballMaterial } from "./eyeMaterial";
 
 const V3 = THREE.Vector3;
 const lin = (hex: string) => new THREE.Color(hex); // THREE.Color converts sRGB hex to linear
@@ -97,48 +98,6 @@ const elevationForHeight = (shape: ReturnType<typeof makeShape>, cfg: BirdConfig
     else hi = mid;
   }
   return (lo + hi) / 2;
-};
-
-// ---------------------------------------------------------------------------
-// Iris texture (polar: x = angle, y = radius)
-// ---------------------------------------------------------------------------
-
-const irisTexture = (cfg: BirdConfig) => {
-  const W = 512;
-  const H = 128;
-  const data = new Uint8Array(W * H * 4);
-  const a = new THREE.Color(cfg.eyes.iris);
-  const d = new THREE.Color(cfg.eyes.irisDark);
-  const rnd = seeded(seedOf(cfg.id, 977));
-  const fibres = Array.from({ length: 96 }, () => rnd());
-  for (let y = 0; y < H; y++) {
-    const r = 1 - y / (H - 1); // sphere-cap uv: v=1 at the pole (centre), 0 at the edge
-    for (let x = 0; x < W; x++) {
-      const ang = x / W;
-      const f = fibres[Math.floor(ang * fibres.length) % fibres.length];
-      const f2 = fibres[(Math.floor(ang * fibres.length * 3) + 7) % fibres.length];
-      // Collarette brighter near the pupil, darker limbal ring at the edge.
-      let k = 0.55 + 0.45 * smooth(0.95, 0.35, r);
-      k *= 0.82 + 0.25 * f + 0.12 * f2;
-      const limbal = smooth(0.78, 1.0, r);
-      const c = new THREE.Color().copy(d).lerp(a, Math.max(0, Math.min(1, k)));
-      c.lerp(d, limbal * 0.85);
-      const i = (y * W + x) * 4;
-      data[i] = Math.round(Math.min(1, c.r) * 255);
-      data[i + 1] = Math.round(Math.min(1, c.g) * 255);
-      data[i + 2] = Math.round(Math.min(1, c.b) * 255);
-      data[i + 3] = 255;
-    }
-  }
-  const tex = new THREE.DataTexture(data, W, H, THREE.RGBAFormat);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.magFilter = THREE.LinearFilter;
-  tex.minFilter = THREE.LinearMipmapLinearFilter;
-  tex.generateMipmaps = true;
-  tex.flipY = false;
-  tex.needsUpdate = true;
-  return tex;
 };
 
 // ---------------------------------------------------------------------------
@@ -488,7 +447,7 @@ export const buildBird = (cfg: BirdConfig, lights: FurLights, quality: "final" |
   hull.bind(skeleton);
 
   /** Grow shell fur on any rigid part (wings, lids). `flow` gives the combing direction from a normal. */
-  const furCoat = (src: THREE.BufferGeometry, lenFactor: number, color: THREE.Color, flow: (n: THREE.Vector3) => THREE.Vector3) => {
+  const furCoat = (src: THREE.BufferGeometry, lenFactor: number | ((p: THREE.Vector3) => number), color: THREE.Color, flow: (n: THREE.Vector3) => THREE.Vector3) => {
     const g0 = src.clone();
     g0.deleteAttribute("uv");
     g0.deleteAttribute("normal");
@@ -500,16 +459,19 @@ export const buildBird = (cfg: BirdConfig, lights: FurLights, quality: "final" |
     const wg = new Float32Array(cnt * 4);
     const wt = new Float32Array(cnt * 3);
     const nn = geo.getAttribute("normal");
+    const pp = geo.getAttribute("position");
     const n = new V3();
+    const pv = new V3();
     for (let i = 0; i < cnt; i++) {
       n.fromBufferAttribute(nn, i);
+      pv.fromBufferAttribute(pp, i);
       const f = flow(n.clone());
       f.addScaledVector(n, -f.dot(n));
       if (f.lengthSq() < 1e-6) f.set(0, 0, 1).addScaledVector(n, -n.z);
       if (f.lengthSq() < 1e-6) f.set(1, 0, 0);
       f.normalize();
       wc.set([f.x, f.y, f.z], i * 3);
-      wg.set([lenFactor, 1, 0.9, 1], i * 4);
+      wg.set([typeof lenFactor === "number" ? lenFactor : lenFactor(pv), 1, 0.9, 1], i * 4);
       wt.set([color.r, color.g, color.b], i * 3);
     }
     geo.setAttribute("aComb", new THREE.BufferAttribute(wc, 3));
@@ -617,44 +579,67 @@ export const buildBird = (cfg: BirdConfig, lights: FurLights, quality: "final" |
   keep(strandGeo);
 
   // ---- Eyes ---------------------------------------------------------------
-  const iris = keep(irisTexture(cfg));
-  const sclera = keep(new THREE.MeshPhysicalMaterial({ color: "#F4F0E8", roughness: 0.42, sheen: 0.4, sheenColor: new THREE.Color("#FFFFFF") }));
-  // Iris and pupil are thin caps on the eyeball; polygon offset keeps them from
-  // z-fighting with each other at wide shots.
-  const pupilMat = keep(new THREE.MeshPhysicalMaterial({ color: "#050506", roughness: 0.25, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }));
-  const irisMat = keep(new THREE.MeshPhysicalMaterial({ map: iris, roughness: 0.35, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
-  const cornea = keep(
-    new THREE.MeshPhysicalMaterial({
-      color: "#FFFFFF",
-      transparent: true,
-      opacity: 0.06,
-      roughness: 0.02,
-      clearcoat: 1,
-      clearcoatRoughness: 0.01,
-      envMapIntensity: 2.4,
-      specularIntensity: 1,
-      depthWrite: false,
-    }),
-  );
+  // Eyeball shading (iris, pupil, sclera, contact shadows) lives in eyeMaterial.ts.
   const rimMat = keep(new THREE.MeshPhysicalMaterial({ color: E.rim, roughness: 0.5, sheen: 0.3 }));
   const lidColor = new THREE.Color(cfg.fur.face ?? cfg.fur.base).lerp(new THREE.Color(E.rim), 0.08);
   const lidMat = keep(new THREE.MeshPhysicalMaterial({ color: lidColor, roughness: 0.8, sheen: 1, sheenRoughness: 0.45, sheenColor: new THREE.Color(cfg.fur.tip) }));
+  // Lid margin: a rounded, slightly glossy edge, a shade darker and warmer than the lid.
+  const marginCol = lidColor.clone().lerp(new THREE.Color(E.rim), 0.55).multiplyScalar(0.72);
+  const marginMat = keep(new THREE.MeshPhysicalMaterial({ color: marginCol, roughness: 0.42, clearcoat: 0.35, clearcoatRoughness: 0.3, sheen: 0.5, sheenColor: new THREE.Color(cfg.fur.tip) }));
   const irisAngle = Math.asin(Math.min(0.98, E.irisSize));
   const sphere = (r: number, ws: number, hs: number, theta = Math.PI) => keep(new THREE.SphereGeometry(r, ws, hs, 0, Math.PI * 2, 0, theta));
-  const eyeParts: Array<{ pupil: THREE.Mesh; lidU: THREE.Bone; lidL: THREE.Bone; eye: THREE.Bone; gazeQ: THREE.Quaternion }> = [];
+  /**
+   * The rounded edge of a lid: an arc along the lid frame's y = 0 circle, centred
+   * on the front, thickest in the middle and tapering to nothing at the corners
+   * (so it melts into the socket instead of ending as a rod).
+   */
+  const lidMargin = (radius: number, tube: number, arcDeg = 124) => {
+    const arc = (arcDeg * Math.PI) / 180;
+    const g = keep(new THREE.TorusGeometry(radius, tube, 14, 120, arc));
+    const pos = g.getAttribute("position");
+    const v = new V3();
+    const c = new V3();
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i);
+      const u = Math.atan2(v.y, v.x);
+      const w = Math.max(0, Math.min(1, u / arc));
+      c.set(Math.cos(u) * radius, Math.sin(u) * radius, 0);
+      v.sub(c).multiplyScalar(Math.pow(Math.sin(Math.PI * w), 0.6)).add(c);
+      pos.setXYZ(i, v.x, v.y, v.z);
+    }
+    g.rotateZ(Math.PI / 2 - arc / 2);
+    g.rotateX(Math.PI / 2);
+    g.computeVertexNormals();
+    return new THREE.Mesh(g, marginMat);
+  };
+  /** Swell a lid shell toward its edge (|y| -> 0) so it rolls into the margin like a thick lid. */
+  const flareLid = (g: THREE.BufferGeometry, r: number, amount: number) => {
+    const pos = g.getAttribute("position");
+    const v = new V3();
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i);
+      const k = 1 - Math.min(1, Math.abs(v.y) / (r * 0.4));
+      v.multiplyScalar(1 + amount * k * k);
+      pos.setXYZ(i, v.x, v.y, v.z);
+    }
+    g.computeVertexNormals();
+    return g;
+  };
+  const eyeballGeo = keep(new THREE.SphereGeometry(eyeR, 128, 96));
+  const cornea = createCornea(eyeR, irisAngle);
+  keep(cornea.geometry);
+  keep(cornea.material);
+  const eyeParts: Array<{ setPupil: (p: number) => void; lidU: THREE.Bone; lidL: THREE.Bone; eye: THREE.Bone; gazeQ: THREE.Quaternion }> = [];
   eyes.forEach((e, k) => {
     const gazeQ = new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), e.gaze);
     const holder = new THREE.Group();
     holder.quaternion.copy(gazeQ);
     eyeBones[k].add(holder);
-    holder.add(new THREE.Mesh(keep(new THREE.SphereGeometry(eyeR, 64, 48)), sclera));
-    const irisCap = new THREE.Mesh(sphere(eyeR * 1.002, 72, 24, irisAngle), irisMat);
-    irisCap.geometry.rotateX(Math.PI / 2);
-    holder.add(irisCap);
-    const pupil = new THREE.Mesh(sphere(eyeR * 1.004, 48, 12, irisAngle * E.pupil), pupilMat);
-    pupil.geometry.rotateX(Math.PI / 2);
-    holder.add(pupil);
-    holder.add(new THREE.Mesh(keep(new THREE.SphereGeometry(eyeR * 1.035, 64, 48)), cornea));
+    const look = createEyeballMaterial({ iris: E.iris, irisDark: E.irisDark, irisAngle, pupil: E.pupil, seed: seedOf(cfg.id, 31 + k) % 97 });
+    keep(look.material);
+    const eyeball = new THREE.Mesh(eyeballGeo, look.material);
+    holder.add(eyeball);
+    holder.add(new THREE.Mesh(cornea.geometry, cornea.material));
     // Coloured liner where the fur meets the eyeball.
     const ringZ = 0.34;
     const ring = new THREE.Mesh(keep(new THREE.TorusGeometry(eyeR * Math.sqrt(1 - ringZ * ringZ) * 1.01, eyeR * E.rimWidth, 16, 72)), rimMat);
@@ -668,16 +653,22 @@ export const buildBird = (cfg: BirdConfig, lights: FurLights, quality: "final" |
     const lidUG = new THREE.Group();
     lidUG.quaternion.copy(gazeQ);
     lidUp[k].add(lidUG);
-    // Lids are furred like the body, combed toward their edge.
-    const lidU = new THREE.Mesh(sphere(eyeR * 1.05, 64, 24, Math.PI / 2), lidMat);
+    // Lids are furred like the body, combed toward their edge; the fur shortens
+    // to velvet at the edge so the margin reads crisply.
+    const rU = eyeR * 1.05;
+    const lidU = new THREE.Mesh(flareLid(sphere(rU, 96, 40, Math.PI / 2), rU, 0.035), lidMat);
     lidUG.add(lidU);
-    lidUG.add(furCoat(lidU.geometry, 0.3, lidColor, () => new V3(0, -0.4, 1)));
+    lidUG.add(furCoat(lidU.geometry, (pt) => 0.24 * (0.18 + 0.82 * smooth(0.02, 0.5, pt.y / rU)), lidColor, () => new V3(0, -0.4, 1)));
+    lidUG.add(lidMargin(eyeR * 1.06, eyeR * 0.045));
     const lidLG = new THREE.Group();
     lidLG.quaternion.copy(gazeQ);
     lidLo[k].add(lidLG);
-    const lidLGeo = keep(new THREE.SphereGeometry(eyeR * 1.065, 64, 24, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2));
+    const rL = eyeR * 1.065;
+    const lidLGeo = flareLid(keep(new THREE.SphereGeometry(rL, 96, 40, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2)), rL, 0.025);
     lidLG.add(new THREE.Mesh(lidLGeo, lidMat));
-    lidLG.add(furCoat(lidLGeo, 0.25, lidColor, () => new V3(0, 0.3, 1)));
+    lidLG.add(furCoat(lidLGeo, (pt) => 0.2 * (0.18 + 0.82 * smooth(0.02, 0.5, -pt.y / rL)), lidColor, () => new V3(0, 0.3, 1)));
+    lidLG.add(lidMargin(eyeR * 1.07, eyeR * 0.03, 110));
+    look.track(eyeball, lidUG, lidLG, socket, eyeR);
     if (E.lashes) {
       const lashMat = keep(new THREE.MeshPhysicalMaterial({ color: "#2A1410", roughness: 0.5 }));
       // Three curved lashes at the outer corner, growing from the lid edge.
@@ -706,7 +697,7 @@ export const buildBird = (cfg: BirdConfig, lights: FurLights, quality: "final" |
         lidU.add(new THREE.Mesh(tube, lashMat));
       });
     }
-    eyeParts.push({ pupil, lidU: lidUp[k], lidL: lidLo[k], eye: eyeBones[k], gazeQ });
+    eyeParts.push({ setPupil: look.setPupil, lidU: lidUp[k], lidL: lidLo[k], eye: eyeBones[k], gazeQ });
   });
 
   // ---- Glasses (Ink) ------------------------------------------------------
@@ -968,7 +959,7 @@ export const buildBird = (cfg: BirdConfig, lights: FurLights, quality: "final" |
       e.lidU.rotation.set(upper * deg, 0, -side * tilt * 18 * deg);
       const lower = 64 - 44 * p.squint - 26 * b01 + p.lookY * 6;
       e.lidL.rotation.set(lower * deg, 0, side * tilt * 5 * deg);
-      e.pupil.scale.setScalar(p.pupil);
+      e.setPupil(E.pupil * p.pupil);
     });
     beakLo.rotation.x = p.beakOpen * 28 * deg;
     wingParts.forEach((w) => {

@@ -16,7 +16,7 @@ import { BIRDS, type BirdId } from "./characters/config";
 import { STUDIO } from "./lighting";
 
 export type LookdevProps = {
-  mode: "single" | "lineup" | "closeup";
+  mode: "single" | "lineup" | "closeup" | "eyes";
   bird: BirdId;
   /** Starting facing, degrees. */
   yaw: number;
@@ -25,6 +25,8 @@ export type LookdevProps = {
   quality: "final" | "preview";
   /** "black" puts the birds on pure black: halo bleed, see-through coverage and edge artifacts show up at once. */
   ground?: "studio" | "black";
+  /** Pose override (expressions, blinks) for eye and face checks. */
+  pose?: Partial<BirdPose>;
 };
 
 const CameraAt: React.FC<{ position: [number, number, number]; target: [number, number, number]; fov: number }> = ({ position, target, fov }) => {
@@ -53,19 +55,24 @@ const idle = (frame: number, seed: number): Partial<BirdPose> => {
   };
 };
 
-export const Lookdev: React.FC<LookdevProps> = ({ mode, bird, yaw, spin, quality, ground = "studio" }) => {
+export const Lookdev: React.FC<LookdevProps> = ({ mode, bird, yaw, spin, quality, ground = "studio", pose }) => {
   const black = ground === "black";
   const frame = useCurrentFrame();
   const { width, height, durationInFrames } = useVideoConfig();
   const turn = yaw + (spin * frame) / Math.max(1, durationInFrames);
   const aspect = width / height;
   const still = spin === 0 && durationInFrames <= 1;
-  const poseFor = (seed: number): Partial<BirdPose> => (still ? {} : idle(frame, seed));
+  const poseFor = (seed: number): Partial<BirdPose> => ({ ...(still ? {} : idle(frame, seed)), ...pose });
 
   let cam: { position: [number, number, number]; target: [number, number, number]; fov: number };
   if (mode === "lineup") {
     const fov = aspect >= 1 ? 22 : 34;
     cam = { position: [0, 1.05, aspect >= 1 ? 9.2 : 11.5], target: [0, 0.62, 0], fov };
+  } else if (mode === "eyes") {
+    // Macro on both eyes: iris detail, lid edges and the socket.
+    const c = BIRDS[bird];
+    const eyeY = c.body.legLength + c.body.height * c.eyes.height;
+    cam = { position: [0.14, eyeY + 0.05, 1.75], target: [0, eyeY - 0.01, 0], fov: 20 };
   } else if (mode === "closeup") {
     const c = BIRDS[bird];
     const eyeY = c.body.legLength + c.body.height * c.eyes.height;

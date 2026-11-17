@@ -192,3 +192,13 @@ Copy the Gate 1 sheets and the pose sheets into `asset-library/characters/` (ima
   - Proof: across all 45 GLBs (798,359 vertices), every normal is now unit length, and positions, UVs, indices and materials are unchanged. Old and new side by side on black: box sides now shade correctly (they had been lit as if facing the light).
   - All 45 GLBs re-exported, logos included. Remotion is unaffected because it builds these models from code. The fix is applied to `asset-library/3d/code/export-glb.mjs` as well.
   - **All Opus, Sonnet and Haiku tasks on this sheet are now done.**
+- **18 Nov, Opus: eyes and eyelids rebuilt (requested after O7).**
+  - The eyeball is one procedural shader (`src/world3d/characters/eyeMaterial.ts`). The iris has radial fibres, a wavy collarette, crypts, contraction furrows and a dark limbal ring, and sits recessed for parallax. The pupil has a soft edge and dilates through a uniform.
+  - That uniform fixes a bug: the `pupil` channel used to scale the pupil cap until it sank inside the eyeball and vanished.
+  - Contact shadows under both lids and in the socket rim, and a glow in the lower iris. Fine detail fades by screen footprint, so wide shots don't shimmer.
+  - Cornea: a bulged shell drawn additively, so it carries only reflections and highlights, such as the window catchlights in the Desk set.
+  - Lids: fur shortens to velvet at the edge, the shell flares out into a rounded margin that tapers at the corners, and margin colours come from each bird's rim colour.
+  - Iris colours match the approved Gate 1 look. That build decoded the colours twice, which is reproduced deliberately and documented in the code.
+  - New checks: the `Eyes-<Bird>` stills and `scripts/lookdev/render-eyes.mjs`, which renders a 5-pose eye sheet per bird on black.
+  - Found while refreshing the stills: above about 2500 px wide the GPU sometimes loses the WebGL context, and the frame comes back as backdrop only. The O7 commit put such empty close-ups into `asset-library/characters/`.
+  - `render-lookdev.mjs` now caps supersampling at 2400 px wide, measures detail in every frame, retries empty ones, and fails loudly after three tries. `render-eyes.mjs` caps its scale at 1.5. All library stills are re-rendered and checked.
