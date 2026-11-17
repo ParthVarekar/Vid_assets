@@ -23,6 +23,8 @@ export type LookdevProps = {
   /** Degrees turned over the whole duration (0 for stills). */
   spin: number;
   quality: "final" | "preview";
+  /** "black" puts the birds on pure black: halo bleed, see-through coverage and edge artifacts show up at once. */
+  ground?: "studio" | "black";
 };
 
 const CameraAt: React.FC<{ position: [number, number, number]; target: [number, number, number]; fov: number }> = ({ position, target, fov }) => {
@@ -51,7 +53,8 @@ const idle = (frame: number, seed: number): Partial<BirdPose> => {
   };
 };
 
-export const Lookdev: React.FC<LookdevProps> = ({ mode, bird, yaw, spin, quality }) => {
+export const Lookdev: React.FC<LookdevProps> = ({ mode, bird, yaw, spin, quality, ground = "studio" }) => {
+  const black = ground === "black";
   const frame = useCurrentFrame();
   const { width, height, durationInFrames } = useVideoConfig();
   const turn = yaw + (spin * frame) / Math.max(1, durationInFrames);
@@ -83,19 +86,19 @@ export const Lookdev: React.FC<LookdevProps> = ({ mode, bird, yaw, spin, quality
       : [{ id: bird, x: 0, yaw: turn, seed: 1 }];
 
   return (
-    <AbsoluteFill style={{ background: "radial-gradient(ellipse 75% 70% at 50% 38%, #FBF7EF 0%, #EFE7DA 55%, #D9CDBA 100%)" }}>
+    <AbsoluteFill style={{ background: black ? "#000" : "radial-gradient(ellipse 75% 70% at 50% 38%, #FBF7EF 0%, #EFE7DA 55%, #D9CDBA 100%)" }}>
       <ThreeCanvas width={width} height={height} gl={{ antialias: true, alpha: true, preserveDrawingBuffer: true }} camera={{ fov: cam.fov, position: cam.position }}>
         <CameraAt {...cam} />
         <RigLights rig={STUDIO} />
         {cast.map((b) => (
           <React.Fragment key={b.id}>
             <Bird id={b.id} rig={STUDIO} yaw={b.yaw} position={[b.x, 0, 0]} quality={quality} pose={poseFor(b.seed)} />
-            <ContactShadow position={[b.x, 0.001, 0.02]} radius={BIRDS[b.id].body.width * 0.95} />
+            {black ? null : <ContactShadow position={[b.x, 0.001, 0.02]} radius={BIRDS[b.id].body.width * 0.95} />}
           </React.Fragment>
         ))}
       </ThreeCanvas>
       {/* Soft vignette, like a lit studio sweep. */}
-      <AbsoluteFill style={{ pointerEvents: "none", boxShadow: `inset 0 0 ${Math.min(width, height) * 0.22}px rgba(120,100,70,0.22)` }} />
+      {black ? null : <AbsoluteFill style={{ pointerEvents: "none", boxShadow: `inset 0 0 ${Math.min(width, height) * 0.22}px rgba(120,100,70,0.22)` }} />}
     </AbsoluteFill>
   );
 };

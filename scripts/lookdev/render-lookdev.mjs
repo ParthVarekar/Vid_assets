@@ -1,6 +1,8 @@
 // Renders the bird lookdev set and tiles it into review sheets.
 //
-//   node scripts/lookdev/render-lookdev.mjs [outDir] [--scale=2] [--only=quill,ink]
+//   node scripts/lookdev/render-lookdev.mjs [outDir] [--scale=2] [--only=quill,ink] [--black] [--closeups]
+//
+// --black renders on pure black (defects show up best there); --closeups renders only the face close-ups.
 //
 // Per bird: front, 3/4, side and back (from the Lookdev-<Bird> turntable),
 // plus a face close-up. Also the trio lineup. Supersampled renders
@@ -17,6 +19,9 @@ const args = process.argv.slice(2);
 const outDir = path.resolve(args.find((a) => !a.startsWith("--")) ?? "out/lookdev/sheet");
 const scale = Number((args.find((a) => a.startsWith("--scale=")) ?? "--scale=1").split("=")[1]);
 const only = (args.find((a) => a.startsWith("--only=")) ?? "--only=quill,ink,chalk").split("=")[1].split(",");
+const black = args.includes("--black");
+const closeupsOnly = args.includes("--closeups");
+const inputProps = black ? { ground: "black" } : {};
 fs.mkdirSync(outDir, { recursive: true });
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
@@ -34,10 +39,10 @@ console.log(`bundled in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 
 const times = [];
 const still = async (id, frame, file) => {
-  const composition = await selectComposition({ serveUrl, id, inputProps: {}, chromiumOptions: { gl: "angle" } });
+  const composition = await selectComposition({ serveUrl, id, inputProps, chromiumOptions: { gl: "angle" } });
   const raw = path.join(outDir, `_raw-${file}`);
   const s = Date.now();
-  await renderStill({ serveUrl, composition, frame, output: raw, imageFormat: "png", scale, chromiumOptions: { gl: "angle" }, overwrite: true });
+  await renderStill({ serveUrl, composition, inputProps, frame, output: raw, imageFormat: "png", scale, chromiumOptions: { gl: "angle" }, overwrite: true });
   const ms = Date.now() - s;
   times.push({ id, frame, ms });
   const dst = path.join(outDir, file);
@@ -52,8 +57,12 @@ const still = async (id, frame, file) => {
 
 const tiles = [];
 for (const b of only) {
-  for (const a of ANGLES) tiles.push({ file: await still(`Lookdev-${cap(b)}`, a.frame, `${b}-${a.label}.png`), label: `${cap(b)} · ${a.label}` });
+  if (!closeupsOnly) for (const a of ANGLES) tiles.push({ file: await still(`Lookdev-${cap(b)}`, a.frame, `${b}-${a.label}.png`), label: `${cap(b)} · ${a.label}` });
   await still(`Closeup-${cap(b)}`, 0, `${b}-closeup.png`);
+}
+if (closeupsOnly) {
+  console.log(`done: ${times.length} close-ups`);
+  process.exit(0);
 }
 await still("Lookdev-Lineup", 0, "lineup.png");
 

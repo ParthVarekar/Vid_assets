@@ -31,6 +31,8 @@ const COMMON = /* glsl */ `
   uniform vec3 uSky;
   uniform vec3 uGround;
   uniform float uSheen;
+  uniform float uVelvet;
+  uniform float uSoft;
 
   vec3 hash33(vec3 p) {
     p = fract(p * vec3(0.1031, 0.1030, 0.0973));
@@ -79,6 +81,7 @@ const COMMON = /* glsl */ `
   // (white primary, tinted secondary) and transmission when back-lit.
   vec3 furShade(vec3 base, vec3 N, vec3 T, vec3 V, float h) {
     vec3 c = vec3(0.0);
+    vec3 rimLight = vec3(0.0);
     for (int i = 0; i < ${MAX_LIGHTS}; i++) {
       vec3 L = uLightDir[i];
       vec3 C = uLightCol[i];
@@ -87,14 +90,19 @@ const COMMON = /* glsl */ `
       float wrap = clamp((ndl + 0.3) / 1.3, 0.0, 1.0);
       wrap *= wrap * (3.0 - 2.0 * wrap) * 0.55 + wrap * 0.45;
       vec3 H = normalize(L + V);
-      // Broad, soft lobes: plush sheen rather than glossy hair streaks.
-      float s1 = kk(normalize(T + N * 0.15), H, 48.0) * 0.32;
-      float s2 = kk(normalize(T - N * 0.22), H, 12.0) * 0.28;
+      // Broad, low lobes: a plush sheen, not glossy hair streaks.
+      float s1 = kk(normalize(T + N * 0.15), H, 30.0) * 0.2;
+      float s2 = kk(normalize(T - N * 0.22), H, 8.0) * 0.2;
       float back = pow(clamp(dot(-L, V), 0.0, 1.0), 5.0) * (0.25 + 0.75 * h) * smoothstep(-0.6, 0.3, -ndl + 0.2);
       c += C * (base * wrap + uSheen * (s1 + s2 * base) * smoothstep(-0.2, 0.5, ndl) + base * back * 1.1);
+      rimLight += C * clamp((ndl + 0.7) / 1.7, 0.0, 1.0);
     }
     float up = N.y * 0.5 + 0.5;
-    c += base * mix(uGround, uSky, up);
+    vec3 ambient = mix(uGround, uSky, up);
+    c += base * ambient;
+    // Velvet: fibres seen side-on at the silhouette catch light and glow.
+    float rim = pow(1.0 - clamp(abs(dot(N, V)), 0.0, 1.0), 2.2);
+    c += uVelvet * rim * (rimLight * 0.55 + ambient) * mix(base, vec3(1.0), 0.3);
     return c;
   }
 `;
@@ -197,8 +205,9 @@ const SHELL_FRAG = /* glsl */ `
       // Clumps: strands lean toward a clump centre as they rise.
       vec3 cTo;
       worley(vRest * uClumpFreq, clumpDist, clumpId, cTo);
-      vec3 q = vRest * uDensity;
-      vec3 centre = (vRest * uClumpFreq + cTo) / uClumpFreq * uDensity;
+      float dens = uDensity * mix(1.7, 1.0, clamp(vGroom.x, 0.0, 1.0));
+      vec3 q = vRest * dens;
+      vec3 centre = (vRest * uClumpFreq + cTo) / uClumpFreq * dens;
       q = mix(q, centre, uClump * vGroom.z * pow(h, 1.4));
       float d; vec3 sTo;
       worley(q, d, strandId, sTo);
@@ -209,6 +218,10 @@ const SHELL_FRAG = /* glsl */ `
       // Short fur (face) gets fatter roots so it reads as velvet, not dots.
       float r = mix(uRadius * 1.45 * mix(1.4, 1.0, clamp(vGroom.x, 0.0, 1.0)), uRadius * 0.35, pow(rel, 0.8));
       float fw = max(fwidth(d), 1e-4);
+      // Hard-edged on purpose. With alpha-to-coverage every shell turns the same
+      // alpha into the same sample mask, so partial alpha does not build up across
+      // shells: soft edges here let the skin show through as a flat pale disc.
+      // Softness comes from shading and from the halo strands instead.
       alpha = 1.0 - smoothstep(r - fw, r + fw, d);
       if (alpha < 0.02) discard;
     }
@@ -219,9 +232,10 @@ const SHELL_FRAG = /* glsl */ `
     // Short fur has shallow roots: less occlusion, so the skin never reads as a grey gap.
     float rootAO = mix(1.0, uRootAO, clamp(vGroom.x, 0.0, 1.0));
     float ao = mix(rootAO, 1.0, pow(h, 0.7));
-    vec3 base = vTint * mix(0.9, 1.08, clumpId) * mix(0.94, 1.04, strandId);
-    // Soft shading between tufts, so the coat breaks into feathery clumps.
-    if (h > 0.0) base *= mix(1.0, 0.8, smoothstep(0.3, 0.8, clumpDist) * (1.0 - 0.5 * h));
+    // Low per-fibre and per-clump variation: enough to feel woven, not enough to see single hairs.
+    vec3 base = vTint * mix(0.95, 1.04, clumpId) * mix(0.97, 1.02, strandId);
+    // Soft shading between tufts, so the coat breaks into gentle clumps.
+    if (h > 0.0) base *= mix(1.0, 0.9, smoothstep(0.3, 0.8, clumpDist) * (1.0 - 0.5 * h));
     base = mix(base, base * uTipLift, h * h);
     vec3 col = furShade(base, N, T, V, h) * ao;
     gl_FragColor = vec4(safeColor(col), alpha);
@@ -240,6 +254,8 @@ export type FurParams = {
   comb: number;
   gravity: number;
   sheen: number;
+  /** Velvet rim glow at the silhouette (0 off). */
+  velvet?: number;
   /** Tip colour multiplier (linear), applied toward the fibre tips. */
   tipLift: THREE.Color;
   rootAO: number;
@@ -270,6 +286,7 @@ export const createShellMaterial = (p: FurParams, lights: FurLights): THREE.Shad
       uClump: { value: p.clump },
       uRadius: { value: p.radius },
       uSheen: { value: p.sheen },
+      uVelvet: { value: p.velvet ?? 0.35 },
       uTipLift: { value: p.tipLift },
       uRootAO: { value: p.rootAO },
     },
@@ -382,8 +399,9 @@ const STRAND_FRAG = /* glsl */ `
   varying float vRand;
 
   void main() {
-    float edge = 1.0 - smoothstep(0.55, 1.0, abs(vSide));
-    float tipFade = 1.0 - smoothstep(0.82, 1.0, vT);
+    // uSoft widens the soft edge and lengthens the tip fade: wispy, not wiry.
+    float edge = 1.0 - smoothstep(mix(0.55, 0.3, uSoft), 1.0, abs(vSide));
+    float tipFade = 1.0 - smoothstep(mix(0.82, 0.5, uSoft), 1.0, vT);
     // Strands pointing at the camera read as speckle; keep them for the silhouette.
     float facing = abs(dot(normalize(vN), normalize(cameraPosition - vW)));
     float alpha = vAlpha * edge * tipFade * mix(1.0, 0.18, smoothstep(0.35, 0.85, facing));
@@ -407,6 +425,10 @@ export type StrandParams = {
   gravity: number;
   width: number;
   sheen: number;
+  /** Velvet rim glow at the silhouette (0 off). */
+  velvet?: number;
+  /** Halo strand softness: wider soft edges and longer tip fades (0 wiry .. 1 wispy). */
+  soft?: number;
   tipLift: THREE.Color;
   rootAO: number;
 };
@@ -427,6 +449,8 @@ export const createStrandMaterial = (p: StrandParams, lights: FurLights): THREE.
       uWind: { value: new THREE.Vector3() },
       uScale: { value: 1 },
       uSheen: { value: p.sheen },
+      uVelvet: { value: p.velvet ?? 0.35 },
+      uSoft: { value: p.soft ?? 0.7 },
       uTipLift: { value: p.tipLift },
       uRootAO: { value: p.rootAO },
     },

@@ -42,7 +42,7 @@ A 12–15 s scene with all three birds: story beat, staging, hand animation, 16:
   - `overlays`: captions, wipe, end card, logo bug.
   - an optional `camera-9x16` track that the vertical render uses instead of the main camera.
 
-### O7 (optional). Fur pass 2
+### O7 (optional). Fur pass 2 (done, 18 Nov)
 A softer, velvety close-up look, closer to the reference: a shorter undercoat, softer strand tips, less "hairy" detail up close.
 
 ---
@@ -179,3 +179,10 @@ Copy the Gate 1 sheets and the pose sheets into `asset-library/characters/` (ima
   - **H4:** `asset-library/characters/` has six JPEG stills, a turnaround, the lineup and the two pose sheets, plus `rig-channels.jpg`, with a README (4.2 MB).
   - **H2 (not done):** re-exporting the 28 icon and decoration GLBs changes their binary data. I could not show the change is harmless, so I restored the committed files and did not commit the re-export. The logo files the turntable uses are byte-identical and unaffected. Before this is done, someone needs to compare the old and new geometry for one icon on screen (the `cloud` puffs are the first candidate).
   - **Left:** Opus O7 (optional fur pass), and the H2 investigation above.
+- **18 Nov, Opus: O7 done.**
+  - Shading: a velvet rim sheen (`velvet`, default 0.35), weaker and broader specular highlights, and less colour variation between fibres and clumps.
+  - Face fur is 1.7× finer where the groom is short, so it reads as velvet and no longer shows dots around the eyes. The halo strands have wider soft edges and longer tip fades (`soft`, default 0.7).
+  - Lesson: shell fibres must keep hard alpha edges. With alpha-to-coverage, every shell turns the same alpha into the same sample mask, so partial alpha doesn't build up across shells. A first try with soft shell edges showed the skin through as a pale disc.
+  - Lookdev now has a black ground: `render-lookdev.mjs --black` (and `--closeups`). It shows halo, coverage and edge defects at once; use it for every fur check.
+  - Render cost is unchanged: no new geometry or texture reads, and about 2.5–2.7 s per lookdev still at scale 1.
+  - The character stills in `asset-library/characters/` and `docs/images/rig-channels.jpg` are re-rendered.
