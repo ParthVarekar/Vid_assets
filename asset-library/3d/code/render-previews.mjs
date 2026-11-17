@@ -12,8 +12,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const OUT = path.join(root, "asset-library/3d/previews");
 fs.mkdirSync(OUT, { recursive: true });
 
-const NIGHT = new Set(["workflow-node", "scale-unit", "scale-field", "line-climb", "line-helix"]);
-const ELEVATION = { "scale-field": 38, "paper-sheet": 30, "construction-set": 18, "logo-plinth": 16 };
+const NIGHT = new Set(["workflow-node", "scale-unit", "scale-field", "line-climb", "line-helix", "terminal", "database", "notification", "chat-bubble", "cloud"]);
+const ELEVATION = { "scale-field": 38, "paper-sheet": 30, "construction-set": 18, "logo-plinth": 16, laptop: 22, "bar-chart": 24, monitor: 8 };
 // With spin 360 over 180 frames, frame 102 puts the model about 25 degrees off front.
 const FRAME = 102;
 

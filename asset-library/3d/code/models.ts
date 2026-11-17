@@ -461,7 +461,7 @@ export const constructionSet = (): Model => ({
 // Catalogue
 // ---------------------------------------------------------------------------
 
-export const buildAll = (L: LogoData): Model[] => [
+const buildCore = (L: LogoData): Model[] => [
   logoMark(L),
   logoMark(L, true),
   quill(L),
@@ -479,7 +479,7 @@ export const buildAll = (L: LogoData): Model[] => [
   constructionSet(),
 ];
 
-export const MODEL_IDS = [
+const CORE_IDS = [
   "logo-mark",
   "logo-mark-two-tone",
   "quill",
@@ -495,5 +495,380 @@ export const MODEL_IDS = [
   "scale-field",
   "paper-sheet",
   "construction-set",
+] as const;
+
+// ===========================================================================
+// 3D icon set: the 18 line icons as ink tubes on paper tiles
+// ===========================================================================
+
+type Poly = { pts: THREE.Vector3[]; closed: boolean };
+
+/** Converts 18-unit SVG icon markup (rect, circle, path with M/L/H/V/C/Z) to polylines. */
+const iconPolylines = (markup: string): Poly[] => {
+  const out: Poly[] = [];
+  const v = (x: number, y: number) => new THREE.Vector3((x - 9) / 18, -(y - 9) / 18, 0);
+  const attr = (el: string, name: string) => Number(el.match(new RegExp(`\\b${name}="([^"]+)"`))?.[1] ?? 0);
+  for (const el of markup.match(/<(rect|circle|path)[^>]*>/g) ?? []) {
+    if (el.startsWith("<circle")) {
+      const cx = attr(el, "cx");
+      const cy = attr(el, "cy");
+      const r = attr(el, "r");
+      const pts: THREE.Vector3[] = [];
+      for (let i = 0; i < 48; i++) pts.push(v(cx + Math.cos((i / 48) * Math.PI * 2) * r, cy + Math.sin((i / 48) * Math.PI * 2) * r));
+      out.push({ pts, closed: true });
+    } else if (el.startsWith("<rect")) {
+      const x = attr(el, "x");
+      const y = attr(el, "y");
+      const w = attr(el, "width");
+      const h = attr(el, "height");
+      const r = Math.min(attr(el, "rx"), w / 2, h / 2);
+      const pts: THREE.Vector3[] = [];
+      const corner = (cx: number, cy: number, a0: number) => {
+        for (let i = 0; i <= 6; i++) {
+          const a = a0 + (i / 6) * (Math.PI / 2);
+          pts.push(v(cx + Math.cos(a) * r, cy + Math.sin(a) * r));
+        }
+      };
+      corner(x + w - r, y + r, -Math.PI / 2);
+      corner(x + w - r, y + h - r, 0);
+      corner(x + r, y + h - r, Math.PI / 2);
+      corner(x + r, y + r, Math.PI);
+      out.push({ pts, closed: true });
+    } else {
+      const d = el.match(/\bd="([^"]+)"/)?.[1] ?? "";
+      const tokens = d.match(/[MLHVCZ]|-?\d*\.?\d+/g) ?? [];
+      let i = 0;
+      let cmd = "M";
+      let x = 0;
+      let y = 0;
+      let cur: Poly | null = null;
+      const n = () => Number(tokens[i++]);
+      while (i < tokens.length) {
+        if (/[MLHVCZ]/.test(tokens[i])) {
+          cmd = tokens[i++];
+          if (cmd === "Z" && cur) cur.closed = true;
+          continue;
+        }
+        if (cmd === "M") {
+          x = n();
+          y = n();
+          cur = { pts: [v(x, y)], closed: false };
+          out.push(cur);
+          cmd = "L";
+        } else if (cmd === "L") {
+          x = n();
+          y = n();
+          cur?.pts.push(v(x, y));
+        } else if (cmd === "H") {
+          x = n();
+          cur?.pts.push(v(x, y));
+        } else if (cmd === "V") {
+          y = n();
+          cur?.pts.push(v(x, y));
+        } else if (cmd === "C") {
+          const x1 = n();
+          const y1 = n();
+          const x2 = n();
+          const y2 = n();
+          const x3 = n();
+          const y3 = n();
+          for (let k = 1; k <= 10; k++) {
+            const t = k / 10;
+            const u = 1 - t;
+            cur?.pts.push(
+              v(
+                u * u * u * x + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t * x3,
+                u * u * u * y + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * y3,
+              ),
+            );
+          }
+          x = x3;
+          y = y3;
+        } else i++;
+      }
+    }
+  }
+  return out;
+};
+
+/** Tube geometry along a polyline; corners stay crisp, joints and ends are rounded. */
+const polyTube = (poly: Poly, r: number): THREE.BufferGeometry[] => {
+  const pts = poly.closed ? [...poly.pts, poly.pts[0]] : poly.pts;
+  const path = new THREE.CurvePath<THREE.Vector3>();
+  for (let i = 0; i < pts.length - 1; i++) {
+    if (pts[i].distanceTo(pts[i + 1]) > 1e-6) path.add(new THREE.LineCurve3(pts[i], pts[i + 1]));
+  }
+  const segs = Math.max(8, path.curves.length * 4);
+  const geos: THREE.BufferGeometry[] = [new THREE.TubeGeometry(path as unknown as THREE.Curve<THREE.Vector3>, segs, r, 12, false)];
+  for (const p of poly.closed ? poly.pts : pts) {
+    const s = new THREE.SphereGeometry(r, 12, 8);
+    s.translate(p.x, p.y, p.z);
+    geos.push(s);
+  }
+  return geos;
+};
+
+export const icon3d = (name: string, markup: string, accent = false): Model => {
+  const S = 1.3;
+  const D = 0.16;
+  const r = (0.8 / 18) * 0.9 * 0.85;
+  const parts: Part[] = [{ name: "tile", geometry: slab(S, S, D, 0.3, 0.03), material: "paperBright" }];
+  iconPolylines(markup).forEach((poly, i) =>
+    polyTube(poly, r).forEach((g, j) => {
+      g.scale(0.85, 0.85, 1);
+      parts.push({ name: `stroke-${i}-${j}`, geometry: g, material: accent ? "sanguine" : "ink", position: [0, 0, D / 2 + r * 0.85] });
+    }),
+  );
+  return { id: `icon3d-${name}`, title: `3D icon: ${name}`, parts };
+};
+
+// ===========================================================================
+// Devices and objects for explainers and ads
+// ===========================================================================
+
+type V3 = [number, number, number];
+
+export const laptop = (): Model => {
+  const W = 1.6;
+  const Dp = 1.05;
+  const T = 0.05;
+  const base = slab(W, Dp, T, 0.06);
+  base.rotateX(-Math.PI / 2);
+  const lidParts: Part[] = [
+    { name: "lid", geometry: slab(W, Dp, 0.035, 0.06), material: "zinc" },
+    { name: "screen", geometry: slab(W - 0.1, Dp - 0.1, 0.004, 0.03, 0), material: "glass", position: [0, 0, 0.02] },
+    { name: "ui-bar", geometry: box(1.2, 0.05, 0.004), material: "white", position: [0, 0.35, 0.024] },
+    { name: "ui-block", geometry: box(0.6, 0.32, 0.004), material: "taupe", position: [0.25, 0.0, 0.024] },
+    { name: "ui-text", geometry: box(0.42, 0.06, 0.004), material: "white", position: [-0.38, 0.1, 0.024] },
+    { name: "ui-text-2", geometry: box(0.32, 0.06, 0.004), material: "white", position: [-0.43, -0.02, 0.024] },
+    { name: "ui-button", geometry: slab(0.22, 0.07, 0.006, 0.035, 0), material: "sanguine", position: [-0.48, -0.18, 0.026] },
+  ];
+  const rot = new THREE.Matrix4().makeRotationX(-Math.PI * 0.08);
+  const parts: Part[] = [
+    { name: "base", geometry: base, material: "zinc" },
+    { name: "keys", geometry: box(W - 0.24, 0.004, Dp * 0.42), material: "inkMatte", position: [0, T / 2 + 0.002, -0.12] },
+    { name: "pad", geometry: box(0.5, 0.003, 0.28), material: "rule", position: [0, T / 2 + 0.002, 0.3] },
+  ];
+  for (const p of lidParts) {
+    const g = p.geometry.clone();
+    const [px, py, pz] = p.position ?? [0, 0, 0];
+    g.translate(px, py + Dp / 2, pz);
+    g.applyMatrix4(rot);
+    g.translate(0, T / 2, -Dp / 2);
+    parts.push({ name: p.name, geometry: g, material: p.material });
+  }
+  return { id: "laptop", title: "Laptop", parts };
+};
+
+export const monitor = (): Model => ({
+  id: "monitor",
+  title: "Desktop monitor",
+  parts: [
+    { name: "frame", geometry: slab(2.0, 1.2, 0.06, 0.04), material: "inkMatte", position: [0, 0.75, 0] },
+    { name: "screen", geometry: slab(1.92, 1.12, 0.004, 0.02, 0), material: "white", position: [0, 0.75, 0.032] },
+    { name: "ui-headline", geometry: box(0.8, 0.09, 0.006), material: "ink", position: [-0.4, 0.95, 0.036] },
+    { name: "ui-headline-2", geometry: box(0.6, 0.09, 0.006), material: "ink", position: [-0.5, 0.83, 0.036] },
+    { name: "ui-image", geometry: slab(0.72, 0.62, 0.006, 0.03, 0), material: "taupe", position: [0.5, 0.75, 0.036] },
+    { name: "ui-button", geometry: slab(0.3, 0.08, 0.008, 0.04, 0), material: "sanguine", position: [-0.62, 0.62, 0.038] },
+    { name: "neck", geometry: box(0.12, 0.42, 0.06), material: "zinc", position: [0, 0.0, -0.06] },
+    { name: "foot", geometry: slab(0.7, 0.36, 0.03, 0.08).rotateX(-Math.PI / 2), material: "zinc", position: [0, -0.2, 0] },
+  ],
+});
+
+export const tablet = (): Model => ({
+  id: "tablet",
+  title: "Tablet",
+  parts: [
+    { name: "body", geometry: slab(1.1, 1.5, 0.05, 0.08), material: "ink" },
+    { name: "screen", geometry: slab(1.02, 1.42, 0.004, 0.05, 0), material: "white", position: [0, 0, 0.026] },
+    { name: "chart-1", geometry: box(0.12, 0.3, 0.02), material: "taupeLight", position: [-0.3, -0.4, 0.04] },
+    { name: "chart-2", geometry: box(0.12, 0.45, 0.02), material: "taupe", position: [-0.12, -0.33, 0.04] },
+    { name: "chart-3", geometry: box(0.12, 0.62, 0.02), material: "ink", position: [0.06, -0.24, 0.04] },
+    { name: "chart-4", geometry: box(0.12, 0.82, 0.02), material: "sanguine", position: [0.24, -0.14, 0.04] },
+    { name: "title", geometry: box(0.5, 0.06, 0.006), material: "ink", position: [-0.17, 0.55, 0.03] },
+  ],
+});
+
+export const chatBubble = (): Model => {
+  const shape = roundedRect(1.4, 0.8, 0.3);
+  const tail = new THREE.Shape();
+  tail.moveTo(-0.45, -0.36);
+  tail.lineTo(-0.62, -0.62);
+  tail.lineTo(-0.2, -0.36);
+  tail.closePath();
+  const g = new THREE.ExtrudeGeometry([shape, tail], {
+    depth: 0.12,
+    bevelEnabled: true,
+    bevelThickness: 0.03,
+    bevelSize: 0.03,
+    bevelSegments: 4,
+    curveSegments: 12,
+  });
+  g.translate(0, 0, -0.06);
+  g.computeVertexNormals();
+  return {
+    id: "chat-bubble",
+    title: "Chat bubble (AI assistant)",
+    parts: [
+      { name: "bubble", geometry: g, material: "paperBright" },
+      ...[-0.3, 0, 0.3].map((x, i) => ({
+        name: `dot-${i}`,
+        geometry: new THREE.SphereGeometry(0.08, 24, 16),
+        material: (i === 2 ? "sanguine" : "ink") as MaterialName,
+        position: [x, 0, 0.1] as V3,
+      })),
+    ],
+  };
+};
+
+export const cursor = (): Model => {
+  const s = new THREE.Shape();
+  const P: Array<[number, number]> = [[0, 0], [0, -1.0], [0.24, -0.78], [0.42, -1.15], [0.56, -1.08], [0.38, -0.72], [0.7, -0.7]];
+  s.moveTo(P[0][0], P[0][1]);
+  for (const p of P.slice(1)) s.lineTo(p[0], p[1]);
+  s.closePath();
+  const g = new THREE.ExtrudeGeometry(s, { depth: 0.1, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 4 });
+  g.translate(-0.35, 0.55, -0.05);
+  g.computeVertexNormals();
+  return { id: "cursor", title: "Cursor", parts: [{ name: "arrow", geometry: g, material: "ink" }] };
+};
+
+export const database = (): Model => ({
+  id: "database",
+  title: "Database",
+  parts: [0, 1, 2].flatMap((i): Part[] => [
+    { name: `disc-${i}`, geometry: new THREE.CylinderGeometry(0.6, 0.6, 0.3, 64), material: i === 2 ? "ink" : "inkMatte", position: [0, i * 0.36 - 0.36, 0] },
+    { name: `band-${i}`, geometry: new THREE.TorusGeometry(0.6, 0.012, 8, 96).rotateX(Math.PI / 2), material: "nightEdge", position: [0, i * 0.36 - 0.36 + 0.15, 0] },
+    { name: `led-${i}`, geometry: new THREE.SphereGeometry(0.035, 16, 12), material: i === 1 ? "sanguineGlow" : "nightEdge", position: [0.42, i * 0.36 - 0.36, 0.43] },
+  ]),
+});
+
+export const cloud = (): Model => {
+  const puffs: Array<[number, number, number, number]> = [[-0.45, -0.05, 0, 0.32], [0, 0.12, 0, 0.45], [0.42, 0.0, 0, 0.34], [-0.15, -0.18, 0.1, 0.3], [0.2, -0.18, 0.1, 0.3]];
+  return {
+    id: "cloud",
+    title: "Cloud",
+    parts: [
+      ...puffs.map(([x, y, z, r], i): Part => ({ name: `puff-${i}`, geometry: new THREE.SphereGeometry(r, 48, 32), material: "paperBright", position: [x, y, z] })),
+      { name: "base", geometry: slab(1.3, 0.3, 0.5, 0.15, 0.03), material: "paperBright", position: [0, -0.22, 0] },
+    ],
+  };
+};
+
+export const terminal = (): Model => {
+  const lines: Array<[number, MaterialName]> = [[0.5, "sanguine"], [0.9, "zinc"], [0.7, "zinc"], [0.4, "white"], [0.85, "zinc"]];
+  return {
+    id: "terminal",
+    title: "Code / terminal window",
+    parts: [
+      { name: "window", geometry: slab(1.6, 1.0, 0.05, 0.05), material: "nightCard" },
+      { name: "bar", geometry: box(1.56, 0.003, 0.003), material: "nightEdge", position: [0, 0.39, 0.026] },
+      ...[0, 1, 2].map((i): Part => ({
+        name: `dot-${i}`,
+        geometry: new THREE.CylinderGeometry(0.018, 0.018, 0.006, 16).rotateX(Math.PI / 2),
+        material: i === 0 ? "sanguine" : "zinc",
+        position: [-0.7 + i * 0.05, 0.44, 0.03],
+      })),
+      ...lines.map(([w, m], i): Part => ({ name: `code-${i}`, geometry: box(w, 0.045, 0.008), material: m, position: [-0.7 + w / 2 + (i % 2 ? 0.08 : 0), 0.24 - i * 0.12, 0.03] })),
+      { name: "caret", geometry: box(0.03, 0.07, 0.012), material: "sanguineGlow", position: [-0.25, -0.38, 0.032] },
+    ],
+  };
+};
+
+export const checkBadge = (markup: string): Model => {
+  const tubes = iconPolylines(markup)
+    .filter((p) => !p.closed)
+    .flatMap((p) => polyTube(p, 0.05));
+  tubes.forEach((g) => g.scale(1.1, 1.1, 1));
+  return {
+    id: "check-badge",
+    title: "Check badge (done / shipped)",
+    parts: [
+      { name: "disc", geometry: new THREE.CylinderGeometry(0.6, 0.6, 0.14, 96).rotateX(Math.PI / 2), material: "sanguine" },
+      { name: "rim", geometry: new THREE.TorusGeometry(0.6, 0.025, 12, 96), material: "sanguine" },
+      ...tubes.map((g, i): Part => ({ name: `check-${i}`, geometry: g, material: "paperBright", position: [0, 0, 0.09] })),
+    ],
+  };
+};
+
+export const notification = (): Model => ({
+  id: "notification",
+  title: "Notification card",
+  parts: [
+    { name: "card", geometry: slab(1.5, 0.42, 0.06, 0.12), material: "paperBright" },
+    { name: "icon", geometry: slab(0.26, 0.26, 0.04, 0.07, 0.008), material: "ink", position: [-0.54, 0, 0.04] },
+    { name: "title", geometry: box(0.62, 0.055, 0.008), material: "ink", position: [-0.04, 0.07, 0.034] },
+    { name: "body", geometry: box(0.82, 0.04, 0.006), material: "zinc", position: [0.06, -0.06, 0.033] },
+    { name: "badge", geometry: new THREE.SphereGeometry(0.06, 24, 16), material: "sanguine", position: [0.7, 0.2, 0.04] },
+  ],
+});
+
+export const toggle = (): Model => ({
+  id: "toggle",
+  title: "Toggle switch (on)",
+  parts: [
+    { name: "track", geometry: slab(1.0, 0.5, 0.14, 0.25, 0.03), material: "sanguine" },
+    { name: "knob", geometry: new THREE.SphereGeometry(0.2, 48, 32).scale(1, 1, 0.7), material: "paperBright", position: [0.24, 0, 0.1] },
+  ],
+});
+
+export const barChart = (): Model => {
+  const h = [0.35, 0.55, 0.5, 0.8, 1.15];
+  return {
+    id: "bar-chart",
+    title: "Bar chart (illustrative)",
+    parts: [
+      { name: "base", geometry: slab(1.7, 0.7, 0.06, 0.08).rotateX(-Math.PI / 2), material: "paper" },
+      ...h.map((v, i): Part => ({
+        name: `bar-${i}`,
+        geometry: slab(0.22, v, 0.22, 0.03, 0.01),
+        material: i === h.length - 1 ? "sanguine" : i === h.length - 2 ? "ink" : "taupe",
+        position: [-0.6 + i * 0.3, v / 2 + 0.03, 0],
+      })),
+    ],
+  };
+};
+
+// ===========================================================================
+// Catalogue
+// ===========================================================================
+
+export const ICON_ACCENT = new Set(["ai-agent", "lightning", "check"]);
+
+/** Every model. `icons` is ICON_PATHS from src/three/data/icons.ts. */
+export const buildAll = (L: LogoData, icons: Readonly<Record<string, string>>): Model[] => [
+  ...buildCore(L),
+  laptop(),
+  monitor(),
+  tablet(),
+  chatBubble(),
+  cursor(),
+  database(),
+  cloud(),
+  terminal(),
+  checkBadge(icons.check),
+  notification(),
+  toggle(),
+  barChart(),
+  ...Object.entries(icons).map(([n, m]) => icon3d(n, m, ICON_ACCENT.has(n))),
+];
+
+const ICON_NAMES = ["form", "ai-agent", "document", "email", "sheet", "crm", "payments", "check", "arrow", "globe", "mobile", "code", "cloud", "dashboard", "integration", "layers", "lightning", "quill"] as const;
+
+export const MODEL_IDS = [
+  ...CORE_IDS,
+  "laptop",
+  "monitor",
+  "tablet",
+  "chat-bubble",
+  "cursor",
+  "database",
+  "cloud",
+  "terminal",
+  "check-badge",
+  "notification",
+  "toggle",
+  "bar-chart",
+  ...ICON_NAMES.map((n) => `icon3d-${n}` as const),
 ] as const;
 export type ModelId = (typeof MODEL_IDS)[number];

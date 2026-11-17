@@ -29,8 +29,10 @@
 <main id="grid"></main>
 <script>
   const MODELS = ["logo-mark", "logo-mark-two-tone", "quill", "cradle-tube", "logo-plinth", "line-climb", "line-step", "line-helix",
-    "browser-window", "phone", "workflow-node", "scale-unit", "scale-field", "paper-sheet", "construction-set"];
-  const NIGHT = new Set(["workflow-node", "scale-unit", "scale-field", "line-climb", "line-helix"]);
+    "browser-window", "phone", "workflow-node", "scale-unit", "scale-field", "paper-sheet", "construction-set",
+    "laptop", "monitor", "tablet", "chat-bubble", "cursor", "database", "cloud", "terminal", "check-badge", "notification", "toggle", "bar-chart",
+    ...["form", "ai-agent", "document", "email", "sheet", "crm", "payments", "check", "arrow", "globe", "mobile", "code", "cloud", "dashboard", "integration", "layers", "lightning", "quill"].map((n) => "icon3d-" + n)];
+  const NIGHT = new Set(["workflow-node", "scale-unit", "scale-field", "line-climb", "line-helix", "terminal", "database", "notification", "chat-bubble", "cloud"]);
   const grid = document.getElementById("grid");
   for (const id of MODELS) {
     const fig = document.createElement("figure");

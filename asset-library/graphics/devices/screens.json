@@ -1,0 +1,53 @@
+{
+  "note": "Screen rectangle inside each frame, in the frame's own pixels. Place content there, behind the frame.",
+  "browser": {
+    "size": {
+      "w": 1600,
+      "h": 1000
+    },
+    "screen": {
+      "x": 0,
+      "y": 56,
+      "w": 1600,
+      "h": 944
+    }
+  },
+  "phone": {
+    "size": {
+      "w": 600,
+      "h": 1240
+    },
+    "screen": {
+      "x": 22,
+      "y": 22,
+      "w": 556,
+      "h": 1196,
+      "radius": 70
+    }
+  },
+  "laptop": {
+    "size": {
+      "w": 2000,
+      "h": 1260
+    },
+    "screen": {
+      "x": 94,
+      "y": 34,
+      "w": 1812,
+      "h": 1112
+    }
+  },
+  "tablet": {
+    "size": {
+      "w": 1100,
+      "h": 1480
+    },
+    "screen": {
+      "x": 40,
+      "y": 40,
+      "w": 1020,
+      "h": 1400,
+      "radius": 30
+    }
+  }
+}

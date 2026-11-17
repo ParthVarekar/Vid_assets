@@ -1,6 +1,6 @@
 # ProtoVinci 3D models — built from code
 
-Fifteen 3D assets generated entirely in code with three.js geometry: no modelling software, no scans, no AI. Every curve of the logo comes from the traced official mark.
+Forty-five 3D assets generated entirely in code with three.js geometry: no modelling software, no scans, no AI. Every curve of the logo comes from the traced official mark.
 
 ![All models](previews/_all-models.jpg)
 
@@ -33,6 +33,17 @@ Fifteen 3D assets generated entirely in code with three.js geometry: no modellin
 | `scale-field` | 5×5 field of units, centre raised | "Systems that grow" |
 | `paper-sheet` | Notebook sheet with a curled corner and construction marks | "On paper", idea stage |
 | `construction-set` | Ring, disc, rules and blocks from the LinkedIn cover | Backgrounds, compositions |
+| `laptop`, `monitor`, `tablet` | Devices with the brand's UI in relief | Product and project shots |
+| `chat-bubble` | Speech bubble with typing dots | AI assistants, chatbots |
+| `cursor` | Pointer arrow | Interaction, "click here" moments |
+| `database` | Three-disc stack with status lights | Data, back end |
+| `cloud` | Soft cloud on a base | Hosting, cloud services |
+| `terminal` | Dark code window with a glowing caret | Engineering, custom software |
+| `check-badge` | Red disc with a white check | Done, shipped, approved |
+| `notification` | Notification card with badge | Automation alerts, apps |
+| `toggle` | Switch in the on position | Automation, settings |
+| `bar-chart` | Five bars on a base (illustrative, no data) | Growth, dashboards |
+| `icon3d-<name>` | All 18 line icons as ink tubes on paper tiles (ai-agent, lightning, check in red) | Service explainers, carousels |
 
 ## Materials
 

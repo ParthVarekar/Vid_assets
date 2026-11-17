@@ -11,6 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as THREE from "three";
 import * as LOGO from "../../src/components/logoPath.ts";
+import { ICON_PATHS } from "../../src/three/data/icons.ts";
 import { buildAll, MATERIALS } from "../../src/three/models.ts";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -125,7 +126,7 @@ const writeGlb = (model, file) => {
   return verts;
 };
 
-const models = buildAll(LOGO);
+const models = buildAll(LOGO, ICON_PATHS);
 for (const m of models) {
   const file = path.join(OUT, `${m.id}.glb`);
   const verts = writeGlb(m, file);

@@ -9,6 +9,8 @@ import React from "react";
 import { Composition, Folder, Still } from "remotion";
 import { LogoSting, STING_FRAMES } from "./compositions/LogoSting";
 import { Turntable, type TurntableProps } from "./compositions/Turntable";
+import { KitCompositions } from "./kit/KitCompositions";
+import { MascotCompositions } from "./mascot/MascotCompositions";
 import { Card, Lockup, Palette, type CardProps, type LockupProps } from "./compositions/Stills";
 import { Cutdown } from "./compositions/Cutdown";
 import type { FilmProps } from "./compositions/Film";
@@ -70,6 +72,8 @@ export const RemotionRoot: React.FC = () => {
           defaultProps={{ audio: null }}
         />
       ))}
+      <KitCompositions />
+      <MascotCompositions />
       <Folder name="ThreeD">
         <Composition
           id="Turntable"

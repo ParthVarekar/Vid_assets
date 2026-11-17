@@ -9,7 +9,7 @@ node --no-warnings scripts/assets/build-library.mjs              # from the proj
 node --no-warnings scripts/assets/build-library.mjs --no-render  # skip the Remotion stills
 ```
 
-**Start with [`MOTION-RULES.md`](MOTION-RULES.md)**, the rules sheet for making films like this with any LLM.
+**Start with [`MOTION-RULES.md`](MOTION-RULES.md)** (the rules for making films like this with any LLM) and **[`CONTENT-KIT.md`](CONTENT-KIT.md)** (video kit, social templates, backgrounds, device frames, annotations, 3D).
 
 ## Contents
 
@@ -29,7 +29,11 @@ node --no-warnings scripts/assets/build-library.mjs --no-render  # skip the Remo
 | `frames/16x9`, `9x16`, `1x1` | One key frame per scene in each format | Posters, thumbnails, presentation stills |
 | `frames/logo-sting/` | Storyboard of the logo sting | Animation is `code/compositions/LogoSting.tsx` |
 | `code/` | The whole animation system: line, quill and logo reveal, type, surfaces, header, UI artefacts, layout, easing, timeline, scenes, compositions, tools | Copy into any Remotion 4 project. Needs `@remotion/paths`, `@remotion/media`, `@remotion/fonts`, `@remotion/google-fonts` |
-| `3d/` | 15 code-built 3D models as .glb, React Three Fiber component, turntable composition, previews, browser viewer | See `3d/README.md`. Opens in Blender, Spline, Unity, Unreal, three.js |
+| `social-templates/` | 129 posts (services, case studies, process, quotes, testimonials, stats, carousel, promise, announcement) in portrait, square and story, plus highlight covers and profile pictures | From real site content; see `CONTENT-KIT.md` |
+| `backgrounds/` | Paper and night grounds (plain, geometry, line) at 16:9, 9:16, 1:1, 4:5, 4K | |
+| `video-kit/previews/` | Stills of the animated video kit | Code in `src/kit/VideoKit.tsx` |
+| `graphics/devices/`, `graphics/annotations/` | Device frames with transparent screens; chalk annotations | SVG + PNG |
+| `3d/` | 45 code-built 3D models as .glb, React Three Fiber component, turntable composition, previews, browser viewer | See `3d/README.md`. Opens in Blender, Spline, Unity, Unreal, three.js |
 | `reference/` | Official brand sources, logo trace checks, portfolio screens | Portfolio screens belong to ProtoVinci's clients. Check clearance before using them in ads |
 
 ## Most reusable pieces

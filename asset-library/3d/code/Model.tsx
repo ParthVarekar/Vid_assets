@@ -6,11 +6,12 @@
 import React, { useMemo } from "react";
 import * as THREE from "three";
 import * as LOGO from "../components/logoPath";
+import { ICON_PATHS } from "./data/icons";
 import { buildAll, MATERIALS, type MaterialName, type ModelId } from "./models";
 
 let cache: Map<string, ReturnType<typeof buildAll>[number]> | null = null;
 const getModel = (id: ModelId) => {
-  if (!cache) cache = new Map(buildAll(LOGO).map((m) => [m.id, m]));
+  if (!cache) cache = new Map(buildAll(LOGO, ICON_PATHS).map((m) => [m.id, m]));
   const m = cache.get(id);
   if (!m) throw new Error(`Unknown model "${id}"`);
   return m;
