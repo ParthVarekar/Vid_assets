@@ -86,7 +86,7 @@ const DopeSheet: React.FC = () => {
   const s = useStore((x) => x);
   const ppf = s.pxPerFrame;
   const width = s.clip.duration * ppf + 40;
-  const tracks = [...s.clip.cast.map((m) => m.id as string), "camera"];
+  const tracks = [...s.clip.cast.map((m) => m.id as string), "camera", "camera-9x16"];
   const chans = channelsFor(s.track).filter((c) => s.showAll || (s.clip.tracks[s.track]?.[c.id]?.length ?? 0) > 0);
 
   const rowKeys = (track: string, channel: string) => (s.clip.tracks[track]?.[channel] ?? []).map((k) => ({ track, channel, f: k.f }));

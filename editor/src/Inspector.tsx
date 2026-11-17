@@ -2,6 +2,7 @@
 // the rig schema. The diamond keys/unkeys the channel at the playhead.
 
 import React, { useState } from "react";
+import { isCameraTrack } from "../../src/world3d/anim/clip";
 import { GROUPS, type Channel } from "../../src/world3d/rig/schema";
 import { CAMERA_PRESETS } from "../../src/world3d/set/cameraPresets";
 import { channelsFor, currentValue, endEdit, keyAt, setValue, setValues, toggleKey, useStore } from "./store";
@@ -56,12 +57,12 @@ export const Inspector: React.FC = () => {
   const track = useStore((s) => s.track);
   const [closed, setClosed] = useState<Record<string, boolean>>({ life: true });
   const chans = channelsFor(track);
-  const groups = track === "camera" ? (["body"] as const) : GROUPS;
+  const groups = isCameraTrack(track) ? (["body"] as const) : GROUPS;
   return (
     <div className="inspector">
-      <div className="panel-title">{track === "camera" ? "Camera" : track[0].toUpperCase() + track.slice(1)}</div>
+      <div className="panel-title">{isCameraTrack(track) ? "Camera" : track[0].toUpperCase() + track.slice(1)}</div>
       <div className="hint small">Hover a control for what it does. Double-click a slider to reset it.</div>
-      {track === "camera" ? (
+      {isCameraTrack(track) ? (
         <select
           value=""
           onChange={(e) => {
@@ -81,12 +82,12 @@ export const Inspector: React.FC = () => {
       {groups.map((g) => (
         <div key={g} className="group">
           <button className="group-head" onClick={() => setClosed((c) => ({ ...c, [g]: !c[g] }))}>
-            {closed[g] ? "▸" : "▾"} {track === "camera" ? "camera" : g}
+            {closed[g] ? "▸" : "▾"} {isCameraTrack(track) ? "camera" : g}
           </button>
           {closed[g]
             ? null
             : chans
-                .filter((c) => (track === "camera" ? true : c.group === g))
+                .filter((c) => (isCameraTrack(track) ? true : c.group === g))
                 .map((c) => <Row key={c.id} track={track} ch={c} />)}
         </div>
       ))}

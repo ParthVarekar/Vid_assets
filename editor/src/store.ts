@@ -2,7 +2,7 @@
 // keeping previous clip objects.
 
 import { useRef, useSyncExternalStore } from "react";
-import { deleteKeys, emptyClip, setKey, shiftKeys, type Clip, type Interp, type Key } from "../../src/world3d/anim/clip";
+import { deleteKeys, emptyClip, isCameraTrack, setKey, shiftKeys, type Clip, type Interp, type Key } from "../../src/world3d/anim/clip";
 import { evaluateBird } from "../../src/world3d/anim/evaluate";
 import { sampleCamera, sampleKeys } from "../../src/world3d/anim/clip";
 import { CAMERA_BY_ID, CAMERA_CHANNELS, CHANNEL_BY_ID, CHANNELS, clampChannel, mirrorValues, type RigValues } from "../../src/world3d/rig/schema";
@@ -113,8 +113,8 @@ export const redo = () =>
 // Values
 // ---------------------------------------------------------------------------
 
-export const channelsFor = (track: string) => (track === "camera" ? CAMERA_CHANNELS : CHANNELS);
-export const channelDef = (track: string, id: string) => (track === "camera" ? CAMERA_BY_ID[id] : CHANNEL_BY_ID[id]);
+export const channelsFor = (track: string) => (isCameraTrack(track) ? CAMERA_CHANNELS : CHANNELS);
+export const channelDef = (track: string, id: string) => (isCameraTrack(track) ? CAMERA_BY_ID[id] : CHANNEL_BY_ID[id]);
 
 /** Clip with pending (unkeyed) edits inserted as keys at the current frame: what the viewport shows. */
 export const displayClip = (s: State): Clip => {
@@ -142,7 +142,7 @@ export const keyAt = (s: State, track: string, ch: string, f = s.frame): Key | u
  */
 export const setValue = (track: string, ch: string, v: number, drag = false) => {
   const s = getState();
-  const val = track === "camera" ? v : clampChannel(ch, v);
+  const val = isCameraTrack(track) ? v : clampChannel(ch, v);
   if (s.autoKey) {
     const prev = keyAt(s, track, ch);
     const clip = setKey(s.clip, track, ch, { ...prev, f: s.frame, v: val });
@@ -161,7 +161,7 @@ export const setValues = (track: string, values: Record<string, number>, drag = 
     let clip = s.clip;
     for (const [ch, v] of Object.entries(values)) {
       const prev = keyAt(s, track, ch);
-      clip = setKey(clip, track, ch, { ...prev, f: s.frame, v: track === "camera" ? v : clampChannel(ch, v) });
+      clip = setKey(clip, track, ch, { ...prev, f: s.frame, v: isCameraTrack(track) ? v : clampChannel(ch, v) });
     }
     if (drag) {
       beginEdit();
@@ -261,7 +261,7 @@ export const pasteKeys = () => {
   let clip = s.clip;
   for (const c of clipboard) {
     // Paste onto the selected bird when copying between birds.
-    const track = c.track === "camera" || s.track === "camera" ? c.track : s.track;
+    const track = isCameraTrack(c.track) || isCameraTrack(s.track) ? c.track : s.track;
     clip = setKey(clip, track, c.channel, { ...c.key, f: s.frame + c.key.f - f0 });
   }
   commit(clip, `Pasted ${clipboard.length} key(s)`);
@@ -270,7 +270,7 @@ export const pasteKeys = () => {
 /** Apply a pose (channel values) as keys or pending values; optionally mirrored. */
 export const applyPose = (values: RigValues, mirrored = false, name = "pose") => {
   const s = getState();
-  if (s.track === "camera") return set({ status: "Select a bird first" });
+  if (isCameraTrack(s.track)) return set({ status: "Select a bird first" });
   setValues(s.track, mirrored ? mirrorValues(values) : values, false, `Applied ${name}${mirrored ? " (mirrored)" : ""}`);
 };
 

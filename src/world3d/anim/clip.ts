@@ -20,6 +20,9 @@
 import { CAMERA_BY_ID, CHANNEL_BY_ID, clampChannel, type RigValues } from "../rig/schema";
 import type { BirdId } from "../characters/config";
 
+/** Camera tracks: "camera" (the main shot camera) and "camera-9x16" (optional vertical-only camera). */
+export const isCameraTrack = (t: string) => t === "camera" || t.startsWith("camera-");
+
 export type Interp = "bezier" | "linear" | "step";
 export type Key = { f: number; v: number; i?: Interp; e?: [number, number, number, number] };
 export type Track = Record<string, Key[]>;
@@ -34,9 +37,22 @@ export type Clip = {
   set?: "studio" | "desk";
   cast: CastMember[];
   tracks: Record<string, Track>;
+  /** Text and graphics drawn over the 3D scene (captions, end card, wipe, logo bug). */
+  overlays?: Overlays;
   /** Optional audio for talk timing, relative to public/. */
   audio?: string | null;
   notes?: string;
+};
+
+export type Overlays = {
+  /** Each caption line appears word by word from `from` (frames per word default 8). */
+  captions?: Array<{ from: number; text: string; framesPerWord?: number; tone?: "paper" | "night" }>;
+  /** Brand line-wipe transition centred on `at`. */
+  wipe?: { at: number; to?: "paper" | "night" };
+  /** Full-frame ProtoVinci end card from `from` to the end. */
+  endCard?: { from: number; cta?: string; url?: string; tone?: "paper" | "night" };
+  /** Small corner logo between `from` and `to`. */
+  logoBug?: { from: number; to: number; corner?: "tl" | "tr" | "bl" | "br"; tone?: "paper" | "night" };
 };
 
 export const EASE_DEFAULT: [number, number, number, number] = [0.33, 0, 0.67, 1];
@@ -114,8 +130,8 @@ export const sampleBirdKeys = (clip: Clip, bird: string, frame: number): RigValu
   return out;
 };
 
-export const sampleCamera = (clip: Clip, frame: number): RigValues => {
-  const track = clip.tracks.camera ?? {};
+export const sampleCamera = (clip: Clip, frame: number, name = "camera"): RigValues => {
+  const track = clip.tracks[name] ?? {};
   const out: RigValues = {};
   for (const id in CAMERA_BY_ID) out[id] = sampleKeys(track[id], frame, CAMERA_BY_ID[id].default);
   return out;
@@ -184,12 +200,13 @@ export const formatClip = (clip: Clip): string => {
     if (k.e) o.e = k.e.map(r);
     return JSON.stringify(o).replace(/,/g, ", ").replace(/:/g, ": ");
   };
-  const order = (track: string) => Object.keys(track === "camera" ? CAMERA_BY_ID : CHANNEL_BY_ID);
+  const order = (track: string) => Object.keys(isCameraTrack(track) ? CAMERA_BY_ID : CHANNEL_BY_ID);
   const lines: string[] = ["{"];
   const head = { version: clip.version, name: clip.name, fps: clip.fps, duration: clip.duration, set: clip.set ?? "studio", rig: clip.rig ?? "studio" };
   for (const [k, v] of Object.entries(head)) lines.push(`  ${JSON.stringify(k)}: ${JSON.stringify(v)},`);
   if (clip.audio) lines.push(`  "audio": ${JSON.stringify(clip.audio)},`);
   if (clip.notes) lines.push(`  "notes": ${JSON.stringify(clip.notes)},`);
+  if (clip.overlays) lines.push(`  "overlays": ${JSON.stringify(clip.overlays)},`);
   lines.push(`  "cast": ${JSON.stringify(clip.cast).replace(/,"/g, ', "').replace(/:/g, ": ").replace(/\},\{/g, "}, {")},`);
   lines.push('  "tracks": {');
   const tracks = Object.entries(clip.tracks).filter(([, t]) => Object.keys(t).length);
@@ -217,7 +234,7 @@ export const validateClip = (c: unknown): string[] => {
   if (!(clip.duration > 0)) errs.push("duration must be > 0");
   if (!Array.isArray(clip.cast)) errs.push("cast must be an array");
   for (const [tn, t] of Object.entries(clip.tracks ?? {})) {
-    const known = tn === "camera" ? CAMERA_BY_ID : CHANNEL_BY_ID;
+    const known = isCameraTrack(tn) ? CAMERA_BY_ID : CHANNEL_BY_ID;
     for (const [ch, keys] of Object.entries(t)) {
       if (!known[ch]) errs.push(`${tn}.${ch}: unknown channel`);
       if (!Array.isArray(keys)) errs.push(`${tn}.${ch}: keys must be an array`);

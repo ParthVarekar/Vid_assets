@@ -30,13 +30,15 @@ const HOME_X = { ink: -1.5, quill: 0, chalk: 1.5 };
 const BODY_H = { quill: 1.0, ink: 1.16, chalk: 0.84 };
 
 export class ClipBuilder {
-  constructor({ name, duration, fps = 30, cast, rig = "studio", notes }) {
+  constructor({ name, duration, fps = 30, cast, set = "studio", rig = "studio", notes, overlays }) {
     this.clip = {
       version: 1,
       name,
       fps,
       duration,
+      set,
       rig,
+      ...(overlays ? { overlays } : {}),
       ...(notes ? { notes } : {}),
       cast: cast.map((id, i) => ({ id, seed: i + 1 })),
       tracks: {},
@@ -172,9 +174,18 @@ export class ClipBuilder {
     return this.keys(track, "talk", [[f0 - 1, 0, "step"], [f0, amount, "step"], [f1, 0, "step"]]);
   }
 
-  /** Camera keys: { px, py, pz, tx, ty, tz, fov, roll, shake }. */
-  camera(f, values, ease = EASE.inOut) {
-    return this.pose("camera", f, values, ease);
+  /** Camera keys: { px, py, pz, tx, ty, tz, fov, roll, shake, blur, focus }. track "camera-9x16" = vertical-only camera. */
+  camera(f, values, ease = EASE.inOut, track = "camera") {
+    return this.pose(track, f, values, ease);
+  }
+
+  /**
+   * A shot: camera goes from `from` (at f0) to `to` (at f1, inclusive) with a slow
+   * move. Shots placed back to back cut cleanly (frames are whole numbers).
+   */
+  shot(f0, f1, from, to = {}, { ease = EASE.inOut, track = "camera" } = {}) {
+    this.camera(f0, from, ease, track);
+    return this.camera(f1, { ...from, ...to }, ease, track);
   }
 
   toJSON() {
@@ -192,7 +203,7 @@ export class ClipBuilder {
 
 const format = (clip) => {
   const lines = ["{"];
-  for (const k of ["version", "name", "fps", "duration", "rig", "notes"]) if (clip[k] !== undefined) lines.push(`  ${JSON.stringify(k)}: ${JSON.stringify(clip[k])},`);
+  for (const k of ["version", "name", "fps", "duration", "set", "rig", "notes", "overlays"]) if (clip[k] !== undefined) lines.push(`  ${JSON.stringify(k)}: ${JSON.stringify(clip[k])},`);
   lines.push(`  "cast": ${JSON.stringify(clip.cast)},`);
   lines.push('  "tracks": {');
   const tracks = Object.entries(clip.tracks);

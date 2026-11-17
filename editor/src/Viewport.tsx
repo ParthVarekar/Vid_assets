@@ -3,8 +3,9 @@
 
 import { OrbitControls, TransformControls } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
-import React, { Suspense, useLayoutEffect, useRef, useState } from "react";
+import React, { Suspense, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { isCameraTrack } from "../../src/world3d/anim/clip";
 import { BirdScene, STUDIO_BACKDROP } from "../../src/world3d/BirdScene";
 import { BIRDS, type BirdId } from "../../src/world3d/characters/config";
 import { displayClip, endEdit, evaluatedPose, set, setValues, useStore } from "./store";
@@ -86,7 +87,7 @@ const PickProxies: React.FC = () => {
 /** Ring on the ground under the selected bird. */
 const SelectionRing: React.FC = () => {
   const s = useStore((x) => x);
-  if (s.track === "camera" || !s.clip.cast.some((m) => m.id === s.track)) return null;
+  if (isCameraTrack(s.track) || !s.clip.cast.some((m) => m.id === s.track)) return null;
   const v = evaluatedPose(s, s.track);
   const r = BIRDS[s.track as BirdId].body.width * 0.62;
   return (
@@ -102,7 +103,7 @@ const Handles: React.FC = () => {
   const s = useStore((x) => x);
   const [dragging, setDragging] = useState(false);
   const target = useRef<THREE.Group>(null);
-  if (s.track === "camera" || s.handle === "none" || !s.clip.cast.some((m) => m.id === s.track)) return null;
+  if (isCameraTrack(s.track) || s.handle === "none" || !s.clip.cast.some((m) => m.id === s.track)) return null;
   const track = s.track as BirdId;
   const v = evaluatedPose(s, track);
   const cfg = BIRDS[track];
@@ -191,8 +192,10 @@ export const Viewport: React.FC = () => {
   const cameraMode = useStore((s) => s.cameraMode);
   const quality = useStore((s) => s.quality);
   const frame = useStore((s) => s.frame);
-  const clip = useStore((s) => displayClip(s));
   const [format, setFormat] = useState<"16:9" | "9:16">("16:9");
+  // The vertical view uses the clip's camera-9x16 track when it has one (same as Remotion).
+  const clip = useStore((s) => displayClip(s));
+  const shown = useMemo(() => (format === "9:16" && clip.tracks["camera-9x16"] ? { ...clip, tracks: { ...clip.tracks, camera: clip.tracks["camera-9x16"] } } : clip), [clip, format]);
   const box = useRef<HTMLDivElement>(null);
 
   return (
@@ -219,7 +222,7 @@ export const Viewport: React.FC = () => {
             {/* The editor's own Suspense boundary: the Desk's props load in the background. */}
             <SceneErrorBoundary>
               <Suspense fallback={null}>
-                <BirdScene clip={clip} frame={frame} quality={quality} camera={cameraMode} lens={quality === "final"} />
+                <BirdScene clip={shown} frame={frame} quality={quality} camera={cameraMode} lens={quality === "final"} />
               </Suspense>
             </SceneErrorBoundary>
             {cameraMode === "free" ? <OrbitControls makeDefault target={[0, 0.6, 0]} /> : null}
