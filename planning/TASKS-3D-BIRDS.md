@@ -121,7 +121,7 @@ grep -rn "mascot\|Nib\b\|Studio-Day\|asset-library/scenes" --include=*.ts --incl
 ```
 Remove or reword every remaining reference (READMEs, CONTENT-KIT, MOTION-RULES) so nothing points at deleted files. `npx tsc --noEmit` must be clean and `npx remotion compositions` must list no `Nib-` ids.
 
-### H2. Re-exported GLBs (NOT DONE: held back, see status)
+### H2. Re-exported GLBs (done by Opus, 18 Nov: it was an exporter bug)
 28 files in `asset-library/3d/glb/` show as modified since the three.js upgrade. Run `node scripts/three/export-glb.mjs`, then `git diff --stat asset-library/3d/glb`. Render `Turntable` once (`npx remotion still Turntable out/tt.png --frame=40 --gl=angle`) and check the logo looks right. If it does, commit the GLBs with the message "Re-export GLBs with three 0.187".
 
 ### H3. Determinism check (done, 17 Nov)
@@ -186,3 +186,9 @@ Copy the Gate 1 sheets and the pose sheets into `asset-library/characters/` (ima
   - Lookdev now has a black ground: `render-lookdev.mjs --black` (and `--closeups`). It shows halo, coverage and edge defects at once; use it for every fur check.
   - Render cost is unchanged: no new geometry or texture reads, and about 2.5–2.7 s per lookdev still at scale 1.
   - The character stills in `asset-library/characters/` and `docs/images/rig-channels.jpg` are re-rendered.
+- **18 Nov, Opus: H2 done. The difference was a real bug in the exporter.**
+  - `export-glb.mjs` wrote `nv.z || 1` as a NaN guard, but `||` also replaces an exact 0. Every normal with z = 0 (box sides, sphere poles) came out tilted 45° and √2 long.
+  - The committed files already had 88,693 such normals; three 0.187 only moved a few more of them to an exact 0. The guard now falls back to +Z only for a zero-length or non-finite normal.
+  - Proof: across all 45 GLBs (798,359 vertices), every normal is now unit length, and positions, UVs, indices and materials are unchanged. Old and new side by side on black: box sides now shade correctly (they had been lit as if facing the light).
+  - All 45 GLBs re-exported, logos included. Remotion is unaffected because it builds these models from code. The fix is applied to `asset-library/3d/code/export-glb.mjs` as well.
+  - **All Opus, Sonnet and Haiku tasks on this sheet are now done.**

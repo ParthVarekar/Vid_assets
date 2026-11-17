@@ -85,10 +85,15 @@ const writeGlb = (model, file) => {
         if (v[k] < min[k]) min[k] = v[k];
         if (v[k] > max[k]) max[k] = v[k];
       }
-      const nv = new THREE.Vector3(nrm.getX(i), nrm.getY(i), nrm.getZ(i)).normalize();
-      n[i * 3] = nv.x || 0;
-      n[i * 3 + 1] = nv.y || 0;
-      n[i * 3 + 2] = nv.z || 1;
+      // Fall back to +Z only for a degenerate normal. (A plain `nv.z || 1` also
+      // replaced an exact 0, which tilted sphere-pole normals 45 degrees.)
+      const nv = new THREE.Vector3(nrm.getX(i), nrm.getY(i), nrm.getZ(i));
+      const len = nv.length();
+      if (len > 1e-12 && Number.isFinite(len)) nv.divideScalar(len);
+      else nv.set(0, 0, 1);
+      n[i * 3] = nv.x + 0; // + 0 turns -0 into 0
+      n[i * 3 + 1] = nv.y + 0;
+      n[i * 3 + 2] = nv.z + 0;
     }
     verts += pos.count;
     json.accessors.push({ bufferView: pushView(p, 34962), componentType: 5126, count: pos.count, type: "VEC3", min, max });
