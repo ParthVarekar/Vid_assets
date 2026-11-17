@@ -75,3 +75,12 @@ Paper and night, each as `plain`, `geometry` (construction lines) and `line` (ge
 - **Devices:** browser, phone, laptop, monitor, tablet.
 - **Objects:** chat bubble, cursor, database, cloud, terminal, check badge, notification, toggle, bar chart, workflow node, scale unit and field, paper sheet, construction set.
 - **3D icons:** all 18 line icons as tubes on paper tiles.
+
+## 6. Mascot and set
+
+**Nib**, ProtoVinci's mascot (a fountain-pen nib come to life, with a quill-feather plume and red-line limbs), and **the Studio**, a build-in-public workshop in Mumbai, make a ready-to-puppeteer show: write a short keyframe script and Nib acts it out, with blinking, breathing, walking, talking, waving and hopping added automatically.
+
+- Guide: `mascot/PUPPET-GUIDE.md`. Sheets: `mascot/expressions.jpg`, `gestures.jpg`, `outfits.jpg`. Set: `scenes/studio-*.jpg`.
+- Compositions: `Nib-Demo`, `Nib-Demo-Vertical` (the vertical one follows Nib with `useFollowCamera`), `Studio-Day`, `Studio-Golden`, `Studio-Night`.
+- Code: `mascot/code/` (`rig.ts` pose model, `Mascot.tsx` drawing, `Actor.tsx` scripts and camera, `Studio.tsx` set).
+- The set and Nib share the brand palette; captions, callouts and the end card from the video kit work on top of them.

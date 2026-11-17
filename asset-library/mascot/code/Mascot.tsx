@@ -165,23 +165,25 @@ const Hat: React.FC<{ hat: Pose["hat"] }> = ({ hat }) => {
 };
 
 /** Props drawn at the right hand. Upright props ignore the forearm angle. */
-const Prop: React.FC<{ prop: Pose["prop"]; x: number; y: number; angle: number; facing: number }> = ({ prop, x, y, angle, facing }) => {
+const Prop: React.FC<{ prop: Pose["prop"]; x: number; y: number; angle: number; facing: number }> = ({ prop, x, y, facing }) => {
   const unflip = facing < 0 ? -1 : 1;
   switch (prop) {
     case "pencil":
       return (
-        <g transform={`translate(${x} ${y}) rotate(${angle - 90})`}>
-          <rect x={-7} y={-20} width={14} height={92} rx={3} fill={C.sanguine} />
-          <rect x={-7} y={-28} width={14} height={10} rx={2} fill={C.taupe} />
-          <path d="M-7 72 L 0 94 L 7 72 Z" fill="#E9D7B8" />
-          <path d="M-2.5 88 L 0 94 L 2.5 88 Z" fill={C.ink} />
+        // Held upright in the fist, tip up, leaning slightly outward.
+        <g transform={`translate(${x} ${y}) rotate(14)`}>
+          <rect x={-8} y={-92} width={16} height={104} rx={3} fill={C.sanguine} />
+          <rect x={-8} y={0} width={16} height={12} rx={2} fill={C.taupe} />
+          <path d="M-8 -92 L 0 -118 L 8 -92 Z" fill="#E9D7B8" />
+          <path d="M-3 -108 L 0 -118 L 3 -108 Z" fill={C.ink} />
         </g>
       );
     case "wrench":
       return (
-        <g transform={`translate(${x} ${y}) rotate(${angle - 90})`}>
-          <rect x={-6} y={-10} width={12} height={78} rx={5} fill={C.zinc} />
-          <path d="M-18 70 a 18 18 0 1 0 36 0 l -8 0 l 0 10 l -20 0 l 0 -10 z" fill={C.zinc} />
+        // Upright, open jaw at the top.
+        <g transform={`translate(${x} ${y}) rotate(14)`}>
+          <rect x={-8} y={-84} width={16} height={96} rx={6} fill={C.zinc} stroke={C.inkSoft} strokeWidth={3} />
+          <path d="M-22 -84 A 22 22 0 1 1 22 -84 L 11 -84 L 11 -100 L -11 -100 L -11 -84 Z" fill={C.zinc} stroke={C.inkSoft} strokeWidth={3} strokeLinejoin="round" />
         </g>
       );
     case "mug":
@@ -214,10 +216,11 @@ const Prop: React.FC<{ prop: Pose["prop"]; x: number; y: number; angle: number; 
     case "flag":
       return (
         <g transform={`translate(${x} ${y})`}>
-          <rect x={-4} y={-150} width={8} height={170} rx={4} fill={C.taupe} />
-          <path d="M4 -148 H 120 L 104 -122 L 120 -96 H 4 Z" fill={C.sanguine} />
-          <g transform={`translate(58 -116) scale(${unflip} 1)`}>
-            <text x={0} y={0} textAnchor="middle" fontFamily="Switzer" fontWeight={600} fontSize={22} fill="#FFFFFF" letterSpacing="-0.5">
+          {/* The flag hangs toward the body so it stays inside the frame. */}
+          <rect x={-4} y={-140} width={8} height={160} rx={4} fill={C.taupe} />
+          <path d="M-4 -138 H -104 L -88 -112 L -104 -86 H -4 Z" fill={C.sanguine} />
+          <g transform={`translate(-52 -105) scale(${unflip} 1)`}>
+            <text x={0} y={0} textAnchor="middle" fontFamily="Switzer" fontWeight={600} fontSize={20} fill="#FFFFFF" letterSpacing="-0.3">
               SHIP IT
             </text>
           </g>

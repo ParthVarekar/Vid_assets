@@ -32,6 +32,8 @@ Needs Node 24+ and FFmpeg on PATH (for the web encodes only).
 
 - `src/timeline.ts` is the single clock (100 BPM, 18 frames a beat). Picture and score both read it, so they stay in sync.
 - `src/scenes/` six scenes; `src/compositions/` master and cutdown; `src/components/` line, quill, type, artefacts; `src/utilities/layout.ts` per-format layouts (9:16 and 1:1 are laid out natively, not cropped).
+- `src/kit/` video kit (lower thirds, captions, wipes, title and end cards), social templates and the site content they use; `src/three/` code-built 3D models; `src/mascot/` Nib the mascot, the puppet engine and the Studio set (see `asset-library/mascot/PUPPET-GUIDE.md`).
+- `asset-library/` every reusable image, vector, 3D model and code element, with `MOTION-RULES.md` and `CONTENT-KIT.md`.
 - `scripts/audio/` score synthesis; `scripts/qa/` contact sheets and audio analysis; `scripts/higgsfield/` optional generation script.
 - `research/`, `planning/` brand, creative and production research, strategy, storyboard, plan, and `planning/handoff.md` (status and known gaps).
 - `public/assets/` brand assets, Switzer fonts (from the brand's site), score WAVs.

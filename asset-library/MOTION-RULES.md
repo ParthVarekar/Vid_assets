@@ -169,6 +169,20 @@ Review as a creative director who did not make it: is the hook readable muted in
 
 ---
 
-## 12. Prompt for any LLM starting a new film from this kit
+## 12. Character animation (Nib)
+
+- **A character is a pose, not a drawing.** Every movable part is a number (`rig.ts`); a performance is a script of changes. Keep poses as data so they can be blended, stored and edited.
+- **Steps land on the beat:** one step per 18 frames. Walks ease in and out; the body bounces and leans slightly forward while moving.
+- **Hold a gesture for at least 20 frames** before the next one, so each reads.
+- **Anticipate:** add a small opposite move 4–6 frames before a big one (crouch before a hop, a dip before a wave). Land with a squash of about 12%.
+- **Eyes lead:** change where the eyes look 4–6 frames before the head turns or the body walks.
+- **Everything lags something:** the feather trails behind motion and drifts on its own, never in sync with the body.
+- **Life without cues:** blink every 2.5–5 s (sometimes twice), breathe at a barely visible 1% stretch, and tilt and raise the brows a little while talking.
+- **Talk with the body:** change gesture at the start of each sentence; mouth flap follows natural syllable rhythm, not a fixed loop.
+- **One key light:** the room's time of day tints the set and the actor together; use the lamp pool and the neon glow as the only local lights.
+- **Framing:** in 9:16 and 1:1 the camera follows the actor (smoothed over about 20 frames), is clamped to the set's edges and keeps the floor in view.
+- **Brand integrity:** the mascot's nib shape comes from the traced logo; never redraw the logo by hand, and keep red for the line (here, the limbs and the feather tip).
+
+## 13. Prompt for any LLM starting a new film from this kit
 
 > You are making a 60 s programmatic brand film in Remotion. Read `MOTION-RULES.md` and follow it exactly. First write `timeline.ts` (100 BPM, 30 fps, 18-frame beats) with one event table per scene. Reuse the components in `asset-library/code/`. Build one scene at a time; after each, render stills at its key beats with `npx remotion render <id> out --frames=a,b,c` and inspect them before continuing. Finish with a contact sheet of the whole film, fix every issue in section 11, then render all formats.

@@ -24,6 +24,8 @@ Done when the status line no longer says `ahead`. If it times out again, tell th
 
 H1 below has already been checked: all counts matched (42/42/42/6/2/30/8). Skip it.
 
+**Status (Sonnet session, 17 Nov):** S1, S2, S3 and S4 done. Outfits sheet fixed (props upright, flag hangs toward the body, hold gesture for every prop). Vertical demo now follows Nib via `useFollowCamera` in `Actor.tsx`; verified at 8 frames. Docs updated (library README, CONTENT-KIT section 6, root README, MOTION-RULES section 12). S5 (more episodes) is optional and not started.
+
 **Status (Haiku session, 17 Nov):** H0 done (pushed). H2 done: sheets and Studio stills are in the library. The outfits sheet has four drawing problems, now listed under S2. H3 done: the storyboard is in the library, and the vertical frames confirm S3 is needed. H4 done. H5 done.
 
 ### H1. Check the content-kit render finished

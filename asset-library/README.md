@@ -9,7 +9,7 @@ node --no-warnings scripts/assets/build-library.mjs              # from the proj
 node --no-warnings scripts/assets/build-library.mjs --no-render  # skip the Remotion stills
 ```
 
-**Start with [`MOTION-RULES.md`](MOTION-RULES.md)** (the rules for making films like this with any LLM) and **[`CONTENT-KIT.md`](CONTENT-KIT.md)** (video kit, social templates, backgrounds, device frames, annotations, 3D).
+**Start with [`MOTION-RULES.md`](MOTION-RULES.md)** (the rules for making films like this with any LLM) and **[`CONTENT-KIT.md`](CONTENT-KIT.md)** (video kit, social templates, backgrounds, device frames, annotations, 3D). To animate the mascot in its set like a puppet show, read **[`mascot/PUPPET-GUIDE.md`](mascot/PUPPET-GUIDE.md)**.
 
 ## Contents
 
@@ -29,11 +29,13 @@ node --no-warnings scripts/assets/build-library.mjs --no-render  # skip the Remo
 | `frames/16x9`, `9x16`, `1x1` | One key frame per scene in each format | Posters, thumbnails, presentation stills |
 | `frames/logo-sting/` | Storyboard of the logo sting | Animation is `code/compositions/LogoSting.tsx` |
 | `code/` | The whole animation system: line, quill and logo reveal, type, surfaces, header, UI artefacts, layout, easing, timeline, scenes, compositions, tools | Copy into any Remotion 4 project. Needs `@remotion/paths`, `@remotion/media`, `@remotion/fonts`, `@remotion/google-fonts` |
-| `social-templates/` | 129 posts (services, case studies, process, quotes, testimonials, stats, carousel, promise, announcement) in portrait, square and story, plus highlight covers and profile pictures | From real site content; see `CONTENT-KIT.md` |
+| `social-templates/` | 126 posts (services, case studies, process, quotes, testimonials, stats, carousel, promise, announcement) in portrait, square and story, plus highlight covers and profile pictures | From real site content; see `CONTENT-KIT.md` |
 | `backgrounds/` | Paper and night grounds (plain, geometry, line) at 16:9, 9:16, 1:1, 4:5, 4K | |
 | `video-kit/previews/` | Stills of the animated video kit | Code in `src/kit/VideoKit.tsx` |
 | `graphics/devices/`, `graphics/annotations/` | Device frames with transparent screens; chalk annotations | SVG + PNG |
 | `3d/` | 45 code-built 3D models as .glb, React Three Fiber component, turntable composition, previews, browser viewer | See `3d/README.md`. Opens in Blender, Spline, Unity, Unreal, three.js |
+| `mascot/` | **Nib**, the mascot: reference sheets (expressions, gestures, outfits and props), a demo storyboard, the full source (`code/`) and the puppet guide | 12 expressions, 12 gestures, 7 props, 3 hats, glasses, 3 body colours. Scripted with keyframes; blink, breathe, walk, talk, wave and hop are automatic |
+| `scenes/` | The Studio set (build-in-public workshop) in day, golden-hour and night | Code in `mascot/code/Studio.tsx`; camera, monitor content and lighting are props |
 | `reference/` | Official brand sources, logo trace checks, portfolio screens | Portfolio screens belong to ProtoVinci's clients. Check clearance before using them in ads |
 
 ## Most reusable pieces

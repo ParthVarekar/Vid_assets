@@ -18,11 +18,12 @@
 // All frames are local to the enclosing <Sequence>.
 
 import React from "react";
-import { useCurrentFrame } from "remotion";
+import { useCurrentFrame, useVideoConfig } from "remotion";
 import { EASE } from "../animations/ease";
 import { hash, noise1 } from "../utilities/rng";
 import { Mascot } from "./Mascot";
 import { applyPose, blendPose, GESTURES, REST, type Pose, type PoseInput } from "./rig";
+import { FLOOR_Y, STAGE_H, STAGE_W, type Camera } from "./Studio";
 
 export type Cue = {
   /** Frame at which the move starts. */
@@ -199,6 +200,36 @@ export const perform = (script: Script, f: number): Pose => {
   }
 
   return p;
+};
+
+/**
+ * A camera that follows the performer, for tall and square frames where the
+ * 16:9 set is cropped. Pass the result to <Studio camera={...}>.
+ *
+ *   const camera = useFollowCamera(script);
+ *   <Studio camera={camera}>…</Studio>
+ *
+ * It smooths Nib's x over +/- 10 frames so starts and stops do not jerk, keeps
+ * the floor in view, and never shows past the edge of the set. In 16:9 it
+ * returns the plain full-stage camera.
+ */
+export const useFollowCamera = (script: Script, zoomTall = 1.2): Camera => {
+  const f = useCurrentFrame();
+  const { width, height } = useVideoConfig();
+  const wide = width / height >= 16 / 9 - 0.01;
+  const zoom = wide ? 1 : zoomTall;
+  const scale = Math.max(width / (STAGE_W / zoom), height / (STAGE_H / zoom));
+  const visW = width / scale;
+  const visH = height / scale;
+  if (wide) return { x: STAGE_W / 2, y: STAGE_H / 2, zoom: 1 };
+  let sum = 0;
+  const offsets = [-10, -5, 0, 5, 10];
+  for (const o of offsets) sum += perform(script, Math.max(0, f + o)).x;
+  const x = Math.max(visW / 2, Math.min(STAGE_W - visW / 2, sum / offsets.length));
+  // Bottom of the view sits a little below the floor so the rug stays visible.
+  const bottom = Math.min(STAGE_H, FLOOR_Y + 110);
+  const y = Math.max(visH / 2, bottom - visH / 2);
+  return { x, y, zoom };
 };
 
 export const Actor: React.FC<{ script: Script; id?: string }> = ({ script, id = "nib" }) => {

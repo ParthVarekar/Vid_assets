@@ -6,7 +6,7 @@ import { Paper } from "../components/Surface";
 import { Captions, evenWords } from "../kit/VideoKit";
 import { C, FONT } from "../theme";
 import { FPS } from "../timeline";
-import { Actor, type Script } from "./Actor";
+import { Actor, useFollowCamera, type Script } from "./Actor";
 import { Mascot } from "./Mascot";
 import { applyPose, EXPRESSIONS, GESTURES, REST, type BodyColor, type Expression, type Gesture, type Hat, type PoseInput, type PropName } from "./rig";
 import { FLOOR_Y, MARKS, Studio, type MonitorShows, type TimeOfDay } from "./Studio";
@@ -40,25 +40,29 @@ export const EPISODE_DEMO: Script = {
   seed: 3,
 };
 
-export const NibDemo: React.FC<{ time: TimeOfDay; monitor: MonitorShows }> = ({ time, monitor }) => (
-  <AbsoluteFill>
-    <Studio time={time} monitor={monitor}>
-      <Actor script={EPISODE_DEMO} />
-    </Studio>
-    <Sequence from={100} durationInFrames={56}>
-      <Captions words={evenWords("Hi! I'm Nib. Welcome to the studio.", 0, 7)} />
-    </Sequence>
-    <Sequence from={306} durationInFrames={48}>
-      <Captions words={evenWords("Let's sketch it, then ship it.", 0, 7)} />
-    </Sequence>
-  </AbsoluteFill>
-);
+export const NibDemo: React.FC<{ time: TimeOfDay; monitor: MonitorShows }> = ({ time, monitor }) => {
+  // In 16:9 this is the whole set; in 9:16 and 1:1 it follows Nib.
+  const camera = useFollowCamera(EPISODE_DEMO);
+  return (
+    <AbsoluteFill>
+      <Studio time={time} monitor={monitor} camera={camera}>
+        <Actor script={EPISODE_DEMO} />
+      </Studio>
+      <Sequence from={100} durationInFrames={56}>
+        <Captions words={evenWords("Hi! I'm Nib. Welcome to the studio.", 0, 7)} perPage={7} />
+      </Sequence>
+      <Sequence from={306} durationInFrames={48}>
+        <Captions words={evenWords("Let's sketch it, then ship it.", 0, 7)} perPage={7} />
+      </Sequence>
+    </AbsoluteFill>
+  );
+};
 
 // ---------------------------------------------------------------------------
 // Reference sheets
 // ---------------------------------------------------------------------------
 
-type Cell = { label: string; pose: PoseInput };
+type Cell = { label: string; pose: PoseInput; /** Shift the character sideways in its card. */ dx?: number };
 
 const Sheet: React.FC<{ title: string; cells: Cell[]; cols: number; zoom?: "face" | "full" }> = ({ title, cells, cols, zoom = "full" }) => {
   const rows = Math.ceil(cells.length / cols);
@@ -87,7 +91,7 @@ const Sheet: React.FC<{ title: string; cells: Cell[]; cols: number; zoom?: "face
                   <Mascot pose={{ ...pose, x: 0, y: 0 }} id={`s${i}`} />
                 </g>
               ) : (
-                <g transform={`translate(${cx} ${top + ch - 70}) scale(0.82)`}>
+                <g transform={`translate(${cx + (c.dx ?? 0)} ${top + ch - 70}) scale(0.82)`}>
                   <Mascot pose={{ ...pose, x: 0, y: 0 }} id={`s${i}`} />
                 </g>
               )}
@@ -114,7 +118,9 @@ const outfitCells: Cell[] = [
   ...(["paper", "sanguine"] as BodyColor[]).map((b) => ({ label: `body: ${b}`, pose: { body: b, expression: "happy" as const } })),
   ...(["pencil", "mug", "laptop", "phone", "flag", "bulb", "wrench"] as PropName[]).map((p) => ({
     label: `prop: ${p}`,
-    pose: { prop: p, gesture: p === "flag" || p === "bulb" ? ("reach" as const) : ("hold" as const), expression: "happy" as const },
+    // "hold" keeps the hand inside the card; "reach" would push it past the edge.
+    pose: { prop: p, gesture: "hold" as const, expression: "happy" as const },
+    dx: -40,
   })),
 ];
 
