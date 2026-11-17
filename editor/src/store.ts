@@ -32,6 +32,12 @@ export type State = {
   /** Rows shown in the dope sheet: only animated channels, or all. */
   showAll: boolean;
   pxPerFrame: number;
+  /** Filter for the inspector and dope sheet channel lists. */
+  search: string;
+  /** Curves: scale every channel to the full height, so degrees and 0..1 values share the graph. */
+  normalise: boolean;
+  /** Keyboard shortcut overlay. */
+  help: boolean;
 };
 
 let state: State = {
@@ -53,6 +59,9 @@ let state: State = {
   status: "",
   showAll: false,
   pxPerFrame: 8,
+  search: "",
+  normalise: false,
+  help: false,
 };
 
 const listeners = new Set<() => void>();

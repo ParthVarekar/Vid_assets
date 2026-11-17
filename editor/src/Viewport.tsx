@@ -6,6 +6,7 @@ import { Canvas, useThree } from "@react-three/fiber";
 import React, { Suspense, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { isCameraTrack } from "../../src/world3d/anim/clip";
+import { framedClip } from "../../src/world3d/anim/vertical";
 import { BirdScene, STUDIO_BACKDROP } from "../../src/world3d/BirdScene";
 import { BIRDS, type BirdId } from "../../src/world3d/characters/config";
 import { displayClip, endEdit, evaluatedPose, set, setValues, useStore } from "./store";
@@ -195,7 +196,7 @@ export const Viewport: React.FC = () => {
   const [format, setFormat] = useState<"16:9" | "9:16">("16:9");
   // The vertical view uses the clip's camera-9x16 track when it has one (same as Remotion).
   const clip = useStore((s) => displayClip(s));
-  const shown = useMemo(() => (format === "9:16" && clip.tracks["camera-9x16"] ? { ...clip, tracks: { ...clip.tracks, camera: clip.tracks["camera-9x16"] } } : clip), [clip, format]);
+  const shown = useMemo(() => framedClip(clip, format === "9:16" ? 9 / 16 : 16 / 9), [clip, format]);
   const box = useRef<HTMLDivElement>(null);
 
   return (

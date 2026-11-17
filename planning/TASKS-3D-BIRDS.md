@@ -18,16 +18,16 @@ Pick tasks from your own section, in order. A task marked **after Ox** waits for
 
 ## OPUS tasks (architecture, rig craft, animation and design taste)
 
-### O1. Shared scene and Remotion `Episode` composition
+### O1. Shared scene and Remotion `Episode` composition (done, 17 Nov)
 `src/world3d/BirdScene.tsx` renders a clip at a frame (cast, light rig, camera from the clip's camera track, contact shadows). Both the editor and Remotion use it, so they show the same frame. `Episode` registers every clip in `content/episodes/*.anim.json`.
 
-### O2. Puppet Studio core (`editor/`, Vite)
+### O2. Puppet Studio core (`editor/`, Vite) (done, 17 Nov)
 State store with undo/redo; 3D viewport (orbit or shot camera, click a bird to select, drag handles for move/turn and an eye-target handle); inspector sliders built from the schema; dope sheet (scrub, set key, auto-key, select/drag/delete keys); playback; save/load JSON into `content/episodes` through a local endpoint.
 
-### O3. Graph editor
+### O3. Graph editor (done, 17 Nov)
 Curves for the selected channels, with draggable bezier easing handles and interpolation presets.
 
-### O4. Gate 2 rig demo (6 s) and parity check
+### O4. Gate 2 rig demo (6 s) and parity check (done, 17 Nov)
 Hand-author `content/episodes/rig-demo.anim.json`: expressions, a gesture, squash and stretch, a hop, a few steps. Render it, check the editor frame matches the Remotion frame, and review the motion from frame strips.
 
 ### O5. Gate 3 set: "The Desk" (done, 17 Nov)
@@ -49,14 +49,14 @@ A softer, velvety close-up look, closer to the reference: a shorter undercoat, s
 
 ## SONNET tasks (well-specified building from the specs above)
 
-### S1. Pose library — data and reference sheet
+### S1. Pose library — data and reference sheet (done, 17 Nov)
 Write `content/poses/expressions.json` (12) and `content/poses/gestures.json` (12). Each entry: `{ "name": "...", "values": { "<channel>": number } }`, using only channel ids from `src/world3d/rig/schema.ts`.
 - **Expressions:** neutral, happy, delighted, laughing, curious, thinking, sceptical, smug, surprised, scared, sad, angry. Use the lid angles (`lidTiltL/R`), `lidOpen`, `squint`, `pupil`, look and `tilt`. Make sceptical and smug asymmetric.
 - **Gestures:** wave L, wave R, point forward, shrug, arms up (cheer), hug-self, facepalm-ish (wing to face), thumbs-up-ish, presenting (wing out, palm up), tiptoe, crouch (anticipation), proud chest-out.
 
 Then add a Remotion still `PoseSheet-Expressions` and `PoseSheet-Gestures` that draws every pose on all three birds in a grid with labels. Render both and look at them: every expression must read at thumbnail size. Fix values until they do.
 
-### S2. Pose panel in Puppet Studio — **after O2** (basic panel exists)
+### S2. Pose panel in Puppet Studio (done, 17 Nov)
 `editor/src/PosePanel.tsx` already lists `content/poses/{expressions,gestures,custom}.json`. Click applies a pose at the playhead; Shift+click applies it mirrored. Add:
 - **"Save current pose":** prompt for a name, choose which channel groups to include (body/eyes/beak/wings/legs/crest), and append `{ name, values }` to `content/poses/custom.json` with `savePoses` from `editor/src/api.ts`.
 - **Delete a custom pose.**
@@ -73,7 +73,7 @@ Done when a saved pose survives a page reload and applies correctly to another b
 - Add a `Prop` component (`src/world3d/set/Prop.tsx`) that loads a GLB with drei `useGLTF` and `staticFile`. Wrap the loading in Remotion's `delayRender`/`continueRender` so renders wait for it.
 - **Done when** a test still shows every prop on a plain floor and total `public/3d/props` is under 120 MB.
 
-### S4. Editor extras — **after O3**
+### S4. Editor extras (done, 17 Nov)
 Already done: copy/paste keys, Bezier/Linear/Step and ease presets for selected keys (Curves panel), undo/redo. Add:
 - Box-select in the dope sheet (drag on empty lane area).
 - A right-click menu on dope-sheet keys: interpolation and ease presets (reuse `setInterp`).
@@ -81,7 +81,7 @@ Already done: copy/paste keys, Bezier/Linear/Step and ease presets for selected 
 - Channel search box, plus a keyboard shortcut overlay (`?`).
 - An audio track: load the clip's `audio` file, draw its waveform under the ruler, and a button "Talk from audio" that keys the `talk` channel from the waveform's loudness for the selected bird.
 
-### S5. 9:16 follow camera (fallback) for episodes
+### S5. 9:16 follow camera (fallback) for episodes (done, 17 Nov)
 Clips can now carry a hand-set `camera-9x16` track (ep01 does), and that always wins.
 
 The task is the fallback for clips that don't have one:
@@ -92,14 +92,14 @@ The task is the fallback for clips that don't have one:
 
 Verify with frame strips of `Episode-rig-demo-9x16` that nobody leaves the frame.
 
-### S7. Episode sound — **after O6**
+### S7. Episode sound (done, 17 Nov)
 ep01 is silent.
 - Add `audio` support to `Episode`: play `clip.audio` with `<Audio>` from `@remotion/media`.
 - Make a 14 s cue with the existing score pipeline (`scripts/audio/render-score.mjs`, 100 BPM grid). The cuts are at frames 90, 180, 270 and 342, so they land on 18-frame beats ×5.
 - Add soft SFX: hop "boops" (on hop takeoffs), chatter for Chalk's `talk` window (192–232), a paper whoosh on the wipe (342) and a chime on the end card.
 - Render, listen to levels with `npm run audio:check`-style checks, and commit the WAV under `public/assets/audio/`.
 
-### S6. Docs — **after O4, S1**
+### S6. Docs (done, 17 Nov)
 - `docs/ANIMATOR-GUIDE.md`, covering:
   - running Puppet Studio, making a clip, using handles, keys, curves and poses;
   - choosing the set and light (`set`, `rig`), camera presets, `blur`/`focus`;
@@ -164,3 +164,12 @@ Copy the Gate 1 sheets and the pose sheets into `asset-library/characters/` (ima
   - **Switch models now.**
     - **Sonnet:** S1 → S2 → S4 → S5 → S7 → S6.
     - **Haiku:** H2 now; H1 and H3 (rig-demo and ep01 exist now); H4 after S1.
+- **17 Nov, Sonnet:** S1, S2, S4, S5, S6 and S7 done.
+  - **S1:** `content/poses/expressions.json` and `gestures.json` (12 each); `PoseSheet-Expressions` and `PoseSheet-Gestures` stills (all three birds in one canvas); poses re-tuned after the first render (happy, delighted, scared, sad and angry did not read). **Deviation:** "facepalm" became **bow**, because a wing pivots at the side of the body and cannot swing across the face. The gestures sheet turns the birds 20° so forward wings show.
+  - **S2:** pose panel: save the current pose (choose groups; x/y/z/yaw never saved), delete custom poses, hover to see values, Shift+click mirrors. `content/poses/custom.json` is the user's file (empty).
+  - **S4:** box-select, right-click key menu, curves "normalise", channel search (inspector and dope sheet), `?` shortcut overlay, audio waveform lane and "Talk from audio". Also fixed: the camera-preset menu always keyed `camera`, never `camera-9x16`.
+  - **S5:** `src/world3d/anim/vertical.ts`, used by `Episode` and the editor's 9:16 view. A hand-set `camera-9x16` track always wins.
+  - **S7:** `scripts/audio/render-score.mjs ep01` (reads the clip: hops, chatter, cuts, captions), `score-ep01.wav` (−14.06 LUFS), `Episode` plays `clip.audio`. `npm run audio:ep01`.
+  - **S6:** `docs/ANIMATOR-GUIDE.md`, `docs/CHARACTER-BIBLE.md`, `docs/RIG-REFERENCE.md` (generated by `npm run docs:rig`, with `docs/images/rig-channels.jpg`), MOTION-RULES section 13.
+  - **Ep01 fixes:** vertical cameras widened (Ink and Chalk were cut off at the frame edges); both videos re-rendered with sound.
+  - **Left:** Haiku H1–H4; Opus O7 (optional fur pass).

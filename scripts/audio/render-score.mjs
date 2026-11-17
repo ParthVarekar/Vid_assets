@@ -1,6 +1,7 @@
 // Renders the film's original score and sound design.
 //
-//   node scripts/audio/render-score.mjs
+//   node scripts/audio/render-score.mjs          # master, cutdown and episode 1
+//   node scripts/audio/render-score.mjs ep01     # just one of: master, cutdown, ep01
 //
 // Everything is synthesised here: no samples, no third-party recordings.
 // Timing comes from src/timeline.ts, the same file the picture uses, so sound
@@ -11,6 +12,7 @@
 //   score-master-music.wav      music stem
 //   score-master-sfx.wav        sound-effects stem
 //   score-cutdown.wav           15 s mix for the cutdown
+//   score-ep01.wav              14 s mix for episode 1 (3D birds, content/episodes)
 // and a loudness report to qa/audio-report.json.
 //
 // Target: -14 LUFS integrated, sample peak at or below -2.2 dBFS, which keeps
@@ -591,6 +593,46 @@ const kit = (music, sfx, kicks) => ({
   },
 });
 
+// --- voices for the 3D birds ---------------------------------------------------
+/** A soft, bouncy "boop": sine with a quick downward pitch bend. Takeoff of a hop. */
+const boop = (freq, dur = 0.17) => {
+  const n = Math.round(dur * SR);
+  const x = new Float32Array(n);
+  let ph = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    ph += (TAU * freq * (1 + 0.55 * Math.exp(-t / 0.035))) / SR;
+    const env = Math.min(1, t / 0.004) * Math.exp(-t / 0.075);
+    x[i] = (Math.sin(ph) + 0.22 * Math.sin(2 * ph) * Math.exp(-t / 0.04)) * env;
+  }
+  return x;
+};
+/** A felt landing: a low sine falling in pitch. */
+const thump = (dur = 0.2) => {
+  const n = Math.round(dur * SR);
+  const x = new Float32Array(n);
+  let ph = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    ph += (TAU * (52 + 70 * Math.exp(-t / 0.03))) / SR;
+    x[i] = Math.sin(ph) * Math.min(1, t / 0.003) * Math.exp(-t / 0.06);
+  }
+  return x;
+};
+/** A tiny bird chirp: a rising whistle with a little vibrato. Chalk's chatter. */
+const chirp = (freq, dur = 0.09) => {
+  const n = Math.round(dur * SR);
+  const x = new Float32Array(n);
+  let ph = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    const k = t / dur;
+    ph += (TAU * freq * (1 + 0.55 * k + 0.03 * Math.sin(TAU * 38 * t))) / SR;
+    x[i] = Math.sin(ph) * Math.sin(Math.PI * k) ** 0.7;
+  }
+  return x;
+};
+
 // --- arrangements -----------------------------------------------------------
 const arrangeMaster = () => {
   const total = sec(T.TOTAL_FRAMES);
@@ -815,6 +857,112 @@ const arrangeCutdown = () => {
   return { music, sfx, kicks, total };
 };
 
+/**
+ * Episode 1. Hops, chatter and camera cuts are read from the episode's JSON, so
+ * the sound stays in sync with the animation when it is re-timed.
+ */
+const arrangeEp01 = () => {
+  const clip = JSON.parse(fs.readFileSync(path.join(root, "content/episodes/ep01-off-the-page.anim.json"), "utf8"));
+  const total = clip.duration / clip.fps;
+  const music = new Group(total + 0.2), sfx = new Group(total + 0.2);
+  const kicks = [];
+  const K = kit(music, sfx, kicks);
+  const bar = (n, beat = 1, f = 0) => sec(T.at(n, beat, f));
+  const fsec = (f) => f / clip.fps;
+  const O = clip.overlays ?? {};
+  const keysOf = (track, ch) => clip.tracks[track]?.[ch] ?? [];
+  const PAN = { ink: -0.4, quill: 0, chalk: 0.4 };
+  const PITCH = { ink: 64, quill: 72, chalk: 79 };
+
+  // Camera cuts: two camera keys on consecutive frames.
+  const cam = keysOf("camera", "pz");
+  const cuts = [];
+  for (let i = 1; i < cam.length; i++) if (cam[i].f - cam[i - 1].f === 1) cuts.push(cam[i].f);
+  const heroCut = cuts[cuts.length - 1];
+
+  // Music: a quiet start over the sketchbook that builds to the cheer and lands on the end card.
+  K.padChord(bar(1), 1, "Dm", 0.7, 0.2, 0.4);
+  K.padChord(bar(2), 1, "Bb", 0.75, 0.25, 0.42);
+  K.bassBar(bar(2), "Bb", 0.7, [[0, 1.6]]);
+  K.padChord(bar(3), 1, "F", 0.9, 0.3, 0.45);
+  K.bassBar(bar(3), "F", 0.85, [[0, 0.9], [2, 0.9]]);
+  K.drumBar(bar(3), { kickBeats: [0, 2], hatPerBeat: 2, level: 0.55 });
+  K.arpBar(bar(3), "F", 2, 1, 0.5);
+  K.padChord(bar(4), 1, "C", 1, 0.35, 0.5);
+  K.bassBar(bar(4), "C", 0.95, [[0, 0.9], [1.5, 0.4], [2, 0.9]]);
+  K.drumBar(bar(4), { kickBeats: [0, 1, 2], hatPerBeat: 4, clapBeats: [1], level: 0.7 });
+  K.arpBar(bar(4), "C", 4, 1, 0.55);
+
+  // The captions get a soft melody, one note on every second word.
+  const MELODY = [[74, 77, 81], [77, 74, 81, 77], [81, 84], [84, 86, 89]];
+  (O.captions ?? []).forEach((c, i) => {
+    const per = c.framesPerWord ?? 8;
+    K.tickAt(fsec(c.from), 86, 0.6);
+    (MELODY[i % MELODY.length] ?? []).forEach((m, j) => K.feltNote(fsec(c.from + j * 2 * per), m, 0.75, j % 2 ? 0.2 : -0.2));
+  });
+  // Pen on paper while Quill studies the sketchbook.
+  K.scratchSpan(fsec(10), fsec(62), 0.9, 21);
+
+  // Quill spots the laptop: a riser into the gasp.
+  const gasp = keysOf("quill", "fluff").find((k) => k.v >= 1.2);
+  if (gasp) {
+    K.riserInto(fsec(gasp.f), 0.45, 0.5);
+    K.pingAt(fsec(gasp.f), 86, 1.1);
+  }
+
+  // Cuts and the cheer.
+  for (const f of cuts) K.whooshAt(fsec(f), 0.55, 0.8);
+  if (heroCut !== undefined) {
+    const t = fsec(heroCut);
+    K.riserInto(t, 0.9, 0.9);
+    K.impactAt(t, 1.2, 1);
+    K.padChord(t, 1.2, "F", 1.25, 0.5, 0.6);
+    K.bassBar(t, "F", 1, [[0, 1.6]]);
+    K.drumBar(bar(5), { kickBeats: [0, 1, 2, 3], hatPerBeat: 4, clapBeats: [1, 3], level: 0.9 });
+    K.arpBar(bar(5), "F", 4, 1, 0.8);
+  }
+
+  // Hops: a boop at takeoff, a soft thump on landing. Pitch and pan follow the bird.
+  for (const bird of Object.keys(clip.tracks)) {
+    if (bird.startsWith("camera")) continue;
+    const y = keysOf(bird, "y");
+    for (let i = 0; i < y.length - 1; i++) {
+      const up = y[i].v < 0.02 && y[i + 1].v > 0.05;
+      const down = y[i].v > 0.05 && y[i + 1].v < 0.02;
+      if (up) {
+        const peak = Math.max(...y.slice(i + 1, i + 3).map((k) => k.v));
+        sfx.put(boop(mtof(PITCH[bird] ?? 72)), fsec(y[i].f), 0.2 * (0.55 + peak), { pan: PAN[bird] ?? 0, room: 0.25 });
+      }
+      if (down) sfx.put(thump(), fsec(y[i + 1].f), 0.16, { pan: PAN[bird] ?? 0, room: 0.2 });
+    }
+    // Talk on: chirps for the length of each phrase.
+    const talk = keysOf(bird, "talk");
+    const rng = makeRng(77 + bird.length);
+    for (let i = 0; i < talk.length - 1; i++) {
+      if (talk[i].v <= 0) continue;
+      for (let f = talk[i].f; f < talk[i + 1].f - 2; f += 4 + Math.floor(rng() * 3)) {
+        const m = (PITCH[bird] ?? 72) + 5 + Math.floor(rng() * 9);
+        sfx.put(chirp(mtof(m), 0.07 + rng() * 0.05), fsec(f), 0.12 * talk[i].v, { pan: PAN[bird] ?? 0, room: 0.25 });
+      }
+    }
+  }
+
+  // The line wipe and the end card.
+  if (O.wipe) K.whooshAt(fsec(O.wipe.at), 0.7, 1);
+  if (O.endCard) {
+    const land = fsec(O.endCard.from + 6);
+    K.riserInto(land, 0.5, 0.55);
+    K.impactAt(land, 1.2, 0.9);
+    sfx.put(shimmer([81, 84, 88, 91, 96], 3.4), land, 0.2, { hall: 0.9 });
+    K.padChord(land, 1, "F", 1.3, 0.5, 0.5);
+    music.put(bass(mtof(29), 2.2), land, 0.18);
+    music.put(bass(mtof(41), 2.2), land, 0.2);
+    K.feltNote(fsec(O.endCard.from + 12), 81, 0.7);
+    K.pingAt(fsec(O.endCard.from + 42), 89, 1.5);
+  }
+  return { music, sfx, kicks, total };
+};
+
 // --- master and write -------------------------------------------------------
 const db = (v) => (20 * Math.log10(v)).toFixed(2);
 
@@ -840,7 +988,7 @@ const finish = (name, arrangement, withStems) => {
     gain *= 10 ** (err / 20);
     result = limit(scaleBy(mix, gain), CEILING);
   }
-  const out = fadeEnds(result.out, 0.01, name === "master" ? 0.5 : 0.35);
+  const out = fadeEnds(result.out, 0.01, name === "master" || name === "ep01" ? 0.5 : 0.35);
   const dir = path.join(root, "public/assets/audio");
   writeWav(path.join(dir, `score-${name}.wav`), out);
   if (withStems) {
@@ -861,7 +1009,20 @@ const finish = (name, arrangement, withStems) => {
 };
 
 const started = Date.now();
-const reports = [finish("master", arrangeMaster(), true), finish("cutdown", arrangeCutdown(), false)];
+const JOBS = {
+  master: () => finish("master", arrangeMaster(), true),
+  cutdown: () => finish("cutdown", arrangeCutdown(), false),
+  ep01: () => finish("ep01", arrangeEp01(), false),
+};
+const wanted = process.argv[2] ? [process.argv[2]] : Object.keys(JOBS);
+if (wanted.some((n) => !JOBS[n])) throw new Error(`unknown mix "${process.argv[2]}": use one of ${Object.keys(JOBS).join(", ")}`);
+const reports = wanted.map((n) => JOBS[n]());
+// Keep the other mixes' entries when rendering just one.
 fs.mkdirSync(path.join(root, "qa"), { recursive: true });
-fs.writeFileSync(path.join(root, "qa/audio-report.json"), JSON.stringify(reports, null, 2));
+const reportFile = path.join(root, "qa/audio-report.json");
+let previous = [];
+try {
+  previous = JSON.parse(fs.readFileSync(reportFile, "utf8"));
+} catch {}
+fs.writeFileSync(reportFile, JSON.stringify([...previous.filter((r) => !reports.some((x) => x.file === r.file)), ...reports], null, 2));
 console.log(`done in ${((Date.now() - started) / 1000).toFixed(1)}s`);

@@ -78,7 +78,12 @@ input[type="range"] { accent-color: var(--accent); }
 .key.keyed { color: var(--key); }
 .key.pending { color: var(--accent); }
 .pose-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 4px 0 8px; }
-.pose-grid button { text-align: left; }
+.pose-item { display: flex; }
+.pose-item button.apply { flex: 1; text-align: left; }
+.pose-item button.del { padding: 3px 6px; margin-left: -1px; color: var(--dim); border-radius: 0 4px 4px 0; }
+.pose-save { display: grid; gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.pose-save input.name { width: 100%; }
+.pose-groups { display: flex; flex-wrap: wrap; gap: 2px 10px; }
 
 .viewport { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
 .viewport-bar { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; }
@@ -122,3 +127,22 @@ input[type="range"] { accent-color: var(--accent); }
 .graph .gkey.sel { fill: var(--key); }
 .graph .handle { fill: #1b1b21; stroke-width: 2; cursor: move; }
 .status { padding: 3px 10px; color: var(--dim); background: var(--bg); border-top: 1px solid var(--line); min-height: 22px; }
+
+.search { width: 100%; margin: 4px 0; }
+.audio-lane { position: relative; background: #1a1a20; border-bottom: 1px solid var(--line); }
+.audio-lane canvas { display: block; }
+.audio-lane .hint { position: absolute; left: 8px; top: 8px; }
+.name.audio-name { color: #6f8fb8; border-bottom: 1px solid var(--line); }
+.marquee { position: absolute; border: 1px solid var(--key); background: rgba(242, 193, 78, 0.12); pointer-events: none; }
+.ctx-menu { position: fixed; z-index: 50; display: grid; min-width: 210px; padding: 4px; background: var(--panel2); border: 1px solid #55556a; border-radius: 6px; box-shadow: 0 8px 28px #000a; }
+.ctx-menu button { text-align: left; border: none; background: transparent; padding: 4px 10px; border-radius: 4px; }
+.ctx-menu button:hover { background: #34344a; }
+.ctx-menu button.danger { color: #ff8a73; }
+.ctx-title { padding: 2px 10px 4px; color: var(--dim); }
+.ctx-sep { height: 1px; background: var(--line); margin: 4px 0; }
+.help-backdrop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(8, 8, 12, 0.6); }
+.help { min-width: 460px; padding: 16px 22px; background: var(--panel); border: 1px solid #55556a; border-radius: 10px; box-shadow: 0 16px 60px #000c; }
+.help table { border-collapse: collapse; width: 100%; }
+.help td { padding: 3px 12px 3px 0; vertical-align: top; }
+.help td:first-child { white-space: nowrap; }
+kbd { padding: 1px 6px; border: 1px solid #55556a; border-bottom-width: 2px; border-radius: 4px; background: var(--bg); }

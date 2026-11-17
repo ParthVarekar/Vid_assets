@@ -5,6 +5,7 @@ import { emptyClip, type CastMember } from "../../src/world3d/anim/clip";
 import { RIGS } from "../../src/world3d/lighting";
 import type { BirdId } from "../../src/world3d/characters/config";
 import { listEpisodes, loadEpisode, saveEpisode } from "./api";
+import { setAudioPath, talkFromAudio } from "./audio";
 import { Inspector } from "./Inspector";
 import { PosePanel } from "./PosePanel";
 import {
@@ -159,8 +160,51 @@ const TopBar: React.FC = () => {
   );
 };
 
+const SHORTCUTS: Array<[string, string]> = [
+  ["Space", "Play / pause"],
+  ["← / →", "Step one frame (Shift: ten)"],
+  ["Home / End", "Jump to the start / end"],
+  ["K", "Key the values you just changed"],
+  ["Shift+K", "Key the whole pose of the selected bird"],
+  ["Delete", "Delete the selected keys"],
+  ["Ctrl+Z / Ctrl+Y", "Undo / redo"],
+  ["Ctrl+C / Ctrl+V", "Copy keys / paste them at the playhead"],
+  ["Ctrl+S", "Save the clip"],
+  ["W / E / R / Q", "Move / turn / eye-target handle / no handle"],
+  ["C", "Shot camera ↔ free camera"],
+  ["1 / 2 / 3 / 0", "Select Quill / Ink / Chalk / the camera"],
+  ["Tab", "Dope sheet ↔ curves"],
+  ["Ctrl + wheel", "Zoom the timeline"],
+  ["Drag empty space", "Box-select keys in the dope sheet"],
+  ["Shift + click / drag", "Add to the selection (keys); mirrored pose (poses)"],
+  ["Right-click a key", "Interpolation and ease presets, delete"],
+  ["Double-click a slider", "Reset it to its default"],
+  ["?", "Show / hide this list"],
+  ["Esc", "Close this list"],
+];
+
+const ShortcutOverlay: React.FC = () => (
+  <div className="help-backdrop" onClick={() => set({ help: false })}>
+    <div className="help" onClick={(e) => e.stopPropagation()}>
+      <div className="panel-title">Keyboard shortcuts</div>
+      <table>
+        <tbody>
+          {SHORTCUTS.map(([k, d]) => (
+            <tr key={k}>
+              <td>
+                <kbd>{k}</kbd>
+              </td>
+              <td>{d}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
 const Transport: React.FC = () => {
-  const s = useStore((x) => ({ frame: x.frame, playing: x.playing, duration: x.clip.duration, fps: x.clip.fps, panel: x.panel }));
+  const s = useStore((x) => ({ frame: x.frame, playing: x.playing, duration: x.clip.duration, fps: x.clip.fps, panel: x.panel, audio: x.clip.audio ?? "" }));
   return (
     <div className="transport">
       <button onClick={() => setFrame(0)} title="Home">⏮</button>
@@ -185,7 +229,17 @@ const Transport: React.FC = () => {
       <button onClick={() => keyPending(false)} title="K: key changed values · Shift+K: key whole pose">
         Set key
       </button>
-      <span className="hint small">Space play · ←/→ step · K key · Shift+K key pose · Del delete · Ctrl+Z/Y undo/redo · Ctrl+C/V keys · W/E/R/Q handles · C camera · 1/2/3/0 select · Tab curves · Ctrl+wheel zoom</span>
+      <span className="sep" />
+      <label title="An audio file under public/ (e.g. assets/audio/line1.wav). Its loudness shows under the ruler.">
+        audio{" "}
+        <input className="name" style={{ width: 200 }} placeholder="assets/audio/…" value={s.audio} onChange={(e) => setAudioPath(e.target.value)} />
+      </label>
+      <button onClick={talkFromAudio} title="Key Talk on the selected bird wherever the audio is loud (replaces its Talk keys)">
+        Talk from audio
+      </button>
+      <button onClick={() => set((x) => ({ help: !x.help }))} title="Keyboard shortcuts (?)">
+        ?
+      </button>
     </div>
   );
 };
@@ -235,6 +289,8 @@ const useShortcuts = () => {
       if (k === "q") return set({ handle: "none" });
       if (k === "c") return set((x) => ({ cameraMode: x.cameraMode === "shot" ? "free" : "shot" }));
       if (k === "tab") return e.preventDefault(), set((x) => ({ panel: x.panel === "dope" ? "graph" : "dope" }));
+      if (k === "?") return set((x) => ({ help: !x.help }));
+      if (k === "escape") return set({ help: false });
       const ids: Record<string, string> = { "1": "quill", "2": "ink", "3": "chalk", "0": "camera" };
       if (ids[k]) return set({ track: ids[k] });
     };
@@ -254,6 +310,7 @@ export const App: React.FC = () => {
   usePlayback();
   useShortcuts();
   const status = useStore((s) => s.status);
+  const help = useStore((s) => s.help);
   useEffect(() => {
     // Open the clip named in the URL (?clip=rig-demo), else the first one.
     const want = new URLSearchParams(location.search).get("clip");
@@ -277,6 +334,7 @@ export const App: React.FC = () => {
       <Transport />
       <Timeline />
       <div className="status">{status}</div>
+      {help ? <ShortcutOverlay /> : null}
     </div>
   );
 };

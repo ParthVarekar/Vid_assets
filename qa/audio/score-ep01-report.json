@@ -1,0 +1,45 @@
+{
+  "file": "public/assets/audio/score-ep01.wav",
+  "seconds": 14,
+  "sampleRate": 48000,
+  "bits": 24,
+  "integratedLufs": -14.06,
+  "loudnessRangeLu": 5.2,
+  "samplePeakDbfs": -2.2,
+  "truePeakDbtpEstimate": -1.83,
+  "spectralBalance": {
+    "sub <60": "14.0%",
+    "bass 60-250": "32.5%",
+    "low-mid 250-1k": "43.6%",
+    "mid 1-4k": "8.0%",
+    "high 4-10k": "0.9%",
+    "air >10k": "1.0%"
+  },
+  "bars": [
+    {
+      "bar": 1,
+      "lufs": -17.6,
+      "peakDb": -4.8
+    },
+    {
+      "bar": 2,
+      "lufs": -17,
+      "peakDb": -7.5
+    },
+    {
+      "bar": 3,
+      "lufs": -14.7,
+      "peakDb": -5.1
+    },
+    {
+      "bar": 4,
+      "lufs": -13.5,
+      "peakDb": -2.2
+    },
+    {
+      "bar": 5,
+      "lufs": -11.8,
+      "peakDb": -2.2
+    }
+  ]
+}

@@ -13,6 +13,8 @@ import { KitCompositions } from "./kit/KitCompositions";
 import { MascotCompositions } from "./mascot/MascotCompositions";
 import { EpisodeCompositions } from "./world3d/Episode";
 import { DeskPreview, type DeskPreviewProps } from "./world3d/set/DeskPreview";
+import { POSE_SHEET, PoseSheet, type PoseSheetProps } from "./world3d/PoseSheet";
+import { RIG_SHEET, RigSheet } from "./world3d/RigSheet";
 import { GpuProbe } from "./world3d/GpuProbe";
 import { Lookdev, type LookdevProps } from "./world3d/Lookdev";
 import { Card, Lockup, Palette, type CardProps, type LockupProps } from "./compositions/Stills";
@@ -99,6 +101,11 @@ export const RemotionRoot: React.FC = () => {
         />
       </Folder>
       <EpisodeCompositions />
+      <Folder name="Poses">
+        <Still id="PoseSheet-Expressions" component={PoseSheet} width={POSE_SHEET.width} height={POSE_SHEET.height} defaultProps={{ which: "expressions" } satisfies PoseSheetProps} />
+        <Still id="RigSheet" component={RigSheet} width={RIG_SHEET.width} height={RIG_SHEET.height} />
+        <Still id="PoseSheet-Gestures" component={PoseSheet} width={POSE_SHEET.width} height={POSE_SHEET.height} defaultProps={{ which: "gestures" } satisfies PoseSheetProps} />
+      </Folder>
       <Folder name="Desk-Set">
         <Still id="DeskPreview" component={DeskPreview} width={1920} height={1080} defaultProps={{ rig: "desk-day", preset: "wide", quality: "final" } satisfies DeskPreviewProps} />
         <Still id="DeskPreview-9x16" component={DeskPreview} width={1080} height={1920} defaultProps={{ rig: "desk-golden", preset: "vertical", quality: "final" } satisfies DeskPreviewProps} />

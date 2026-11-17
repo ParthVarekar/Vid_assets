@@ -30,7 +30,7 @@ const HOME_X = { ink: -1.5, quill: 0, chalk: 1.5 };
 const BODY_H = { quill: 1.0, ink: 1.16, chalk: 0.84 };
 
 export class ClipBuilder {
-  constructor({ name, duration, fps = 30, cast, set = "studio", rig = "studio", notes, overlays }) {
+  constructor({ name, duration, fps = 30, cast, set = "studio", rig = "studio", notes, overlays, audio }) {
     this.clip = {
       version: 1,
       name,
@@ -39,6 +39,7 @@ export class ClipBuilder {
       set,
       rig,
       ...(overlays ? { overlays } : {}),
+      ...(audio ? { audio } : {}),
       ...(notes ? { notes } : {}),
       cast: cast.map((id, i) => ({ id, seed: i + 1 })),
       tracks: {},
@@ -203,7 +204,7 @@ export class ClipBuilder {
 
 const format = (clip) => {
   const lines = ["{"];
-  for (const k of ["version", "name", "fps", "duration", "set", "rig", "notes", "overlays"]) if (clip[k] !== undefined) lines.push(`  ${JSON.stringify(k)}: ${JSON.stringify(clip[k])},`);
+  for (const k of ["version", "name", "fps", "duration", "set", "rig", "audio", "notes", "overlays"]) if (clip[k] !== undefined) lines.push(`  ${JSON.stringify(k)}: ${JSON.stringify(clip[k])},`);
   lines.push(`  "cast": ${JSON.stringify(clip.cast)},`);
   lines.push('  "tracks": {');
   const tracks = Object.entries(clip.tracks);

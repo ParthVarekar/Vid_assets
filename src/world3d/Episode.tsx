@@ -6,7 +6,9 @@
 import { ThreeCanvas } from "@remotion/three";
 import React, { useMemo } from "react";
 import { AbsoluteFill, Composition, Folder, Sequence, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { Audio } from "@remotion/media";
 import { Captions, EndCard, evenWords, LineWipe, LogoBug } from "../kit/VideoKit";
+import { framedClip } from "./anim/vertical";
 import { setAssetEnv } from "./set/assets";
 import type { Clip } from "./anim/clip";
 import { BirdScene, STUDIO_BACKDROP } from "./BirdScene";
@@ -17,10 +19,6 @@ import { EPISODES } from "./episodes";
 setAssetEnv({ url: (p) => staticFile(p) });
 
 export type EpisodeProps = { clip: Clip; quality: "final" | "preview" };
-
-/** Tall formats use the clip's "camera-9x16" track when it has one. */
-export const framedClip = (clip: Clip, tall: boolean): Clip =>
-  tall && clip.tracks["camera-9x16"] ? { ...clip, tracks: { ...clip.tracks, camera: clip.tracks["camera-9x16"] } } : clip;
 
 /** Captions, wipe, logo bug and end card from the clip's `overlays`. */
 const Overlays: React.FC<{ o: NonNullable<Clip["overlays"]>; tall: boolean; height: number }> = ({ o, tall, height }) => (
@@ -57,7 +55,8 @@ const Overlays: React.FC<{ o: NonNullable<Clip["overlays"]>; tall: boolean; heig
 export const Episode: React.FC<EpisodeProps> = ({ clip, quality }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
-  const framed = useMemo(() => framedClip(clip, height > width), [clip, height, width]);
+  // Tall formats: the clip's own camera-9x16 track, else a camera derived from the main one.
+  const framed = useMemo(() => framedClip(clip, width / height), [clip, height, width]);
   // Once the end card covers the frame, skip the 3D scene entirely.
   const show3d = !clip.overlays?.endCard || frame < clip.overlays.endCard.from;
   return (
@@ -69,6 +68,7 @@ export const Episode: React.FC<EpisodeProps> = ({ clip, quality }) => {
       ) : null}
       <AbsoluteFill style={{ pointerEvents: "none", boxShadow: `inset 0 0 ${Math.min(width, height) * 0.22}px rgba(120,100,70,0.22)` }} />
       {clip.overlays ? <Overlays o={clip.overlays} tall={height > width} height={height} /> : null}
+      {clip.audio ? <Audio src={staticFile(clip.audio)} /> : null}
     </AbsoluteFill>
   );
 };

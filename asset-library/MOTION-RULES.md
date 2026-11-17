@@ -183,6 +183,38 @@ Review as a creative director who did not make it: is the hook readable muted in
 - **Framing:** in 9:16 and 1:1 the camera follows the actor (smoothed over about 20 frames), is clamped to the set's edges and keeps the floor in view.
 - **Brand integrity:** the mascot's nib shape comes from the traced logo; never redraw the logo by hand, and keep red for the line (here, the limbs and the feather tip).
 
-## 13. Prompt for any LLM starting a new film from this kit
+## 13. 3D characters (Quill, Ink and Chalk)
+
+The birds are data, the rig is a list of numbers, and an animation is a JSON file that is a pure function of the frame. Guides: `docs/ANIMATOR-GUIDE.md`, `docs/RIG-REFERENCE.md`, `docs/CHARACTER-BIBLE.md`.
+
+**Acting**
+- **Eyes lead.** Gaze moves 4–6 frames before the head turns or the body moves.
+- **Anticipate every hop.** Squash (about −0.25) for 6 frames, stretch (+0.2) on launch, squash on landing, settle over 12 frames. `hop()` in `scripts/anim/authoring.mjs` does all of it.
+- **The lids carry the expression.** Use `lidTiltL/R`, `lidOpen`, `squint` and half blinks. Make sceptical, smug and curious asymmetric.
+- **Stagger the cast** by 4–8 frames. Never start all three on one frame.
+- **Each bird has a register:** Ink small and dry, Chalk big and early, Quill in between and the one who discovers.
+- **Held poses read.** Hold a gesture at least 20 frames before the next one.
+- **Leave the life layers on:** auto-blink, breathing and `jiggle` (crest, fur and wing follow-through). Turn auto-blink off only for a held stare or closed eyes.
+
+**Camera and light**
+- **Back-light to sell fur.** The window behind the birds (`desk-golden`) rims the fur; front light alone looks flat.
+- **Miniature:** a telephoto lens (fov 22–30) with depth of field (`blur` 2–4) and `focus` on the bird that matters.
+- **Cuts** are two camera keys on consecutive frames. Cut on a beat.
+- **Vertical is its own shot.** A 9:16 frame sees a third of the width; key a `camera-9x16` track (or let `src/world3d/anim/vertical.ts` reframe wide shots). Lift captions above the birds.
+
+**Sound**
+- Hops get a boop on takeoff and a thump on landing; chatter gets chirps; cuts get whooshes. Pan and pitch follow the bird (Ink low-left, Quill centre, Chalk high-right). `scripts/audio/render-score.mjs ep01` reads the clip, so re-timed animation keeps its sound.
+
+**Engineering rules (each one was a real bug)**
+1. No `Math.random()`, no `useFrame` animation, no state carried between frames. Secondary motion is a spring simulated from rest 45 frames back.
+2. Load 3D assets with React Suspense. Remotion's `ThreeCanvas` waits for anything suspended inside it; do not add your own `<Suspense>` around the scene, and do not use hand-rolled `delayRender` calls.
+3. Build post-processing with `postprocessing`' own `EffectComposer` inside a `useMemo`. The React wrapper creates its composer one render late, and Remotion draws each frame once, so frames came out empty.
+4. Guard every shader output against NaN and infinity. A blur or bloom spreads one bad pixel over the whole frame.
+5. One canvas for many birds (sheets and grids): browsers allow only about 16 WebGL contexts.
+6. Camera far plane 500: a backdrop plane at −150 vanished at the old 80.
+7. Render Desk scenes with `--gl=angle --concurrency=2`; more tabs run Chrome out of memory.
+8. Pass props to Remotion as a JSON file (see rule 9 of section 10); the editor serves `public/` at the root so `staticFile` paths work in both.
+
+## 14. Prompt for any LLM starting a new film from this kit
 
 > You are making a 60 s programmatic brand film in Remotion. Read `MOTION-RULES.md` and follow it exactly. First write `timeline.ts` (100 BPM, 30 fps, 18-frame beats) with one event table per scene. Reuse the components in `asset-library/code/`. Build one scene at a time; after each, render stills at its key beats with `npx remotion render <id> out --frames=a,b,c` and inspect them before continuing. Finish with a contact sheet of the whole film, fix every issue in section 11, then render all formats.

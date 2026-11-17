@@ -16,5 +16,14 @@
     "preLimiterPeakDbfs": 1.4,
     "limiterActiveFraction": 0.2951,
     "appliedGainDb": 5.14
+  },
+  {
+    "file": "public/assets/audio/score-ep01.wav",
+    "seconds": 14,
+    "integratedLufs": -14.06,
+    "samplePeakDbfs": -2.2,
+    "preLimiterPeakDbfs": 0.22,
+    "limiterActiveFraction": 0.1273,
+    "appliedGainDb": 4.14
   }
 ]

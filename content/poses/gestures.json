@@ -1,0 +1,14 @@
+[
+  { "name": "wave L", "values": { "wingL": 1, "wingR": 0, "wingSwingL": 0.15, "wingSwingR": 0, "wingTwistL": 0, "wingTwistR": 0, "lean": 0, "tilt": 6, "twist": 0, "stretch": 0.03, "crest": 0.1 } },
+  { "name": "wave R", "values": { "wingL": 0, "wingR": 1, "wingSwingL": 0, "wingSwingR": 0.15, "wingTwistL": 0, "wingTwistR": 0, "lean": 0, "tilt": -6, "twist": 0, "stretch": 0.03, "crest": 0.1 } },
+  { "name": "point forward", "values": { "wingL": 0, "wingR": 0.3, "wingSwingL": 0, "wingSwingR": 1, "wingTwistL": 0, "wingTwistR": 0, "lean": 6, "tilt": -3, "twist": -8, "stretch": 0, "crest": 0.2 } },
+  { "name": "shrug", "values": { "wingL": 0.5, "wingR": 0.5, "wingSwingL": 0.3, "wingSwingR": 0.3, "wingTwistL": 0.5, "wingTwistR": 0.5, "lean": 0, "tilt": 0, "twist": 0, "stretch": -0.1, "crest": -0.2 } },
+  { "name": "cheer", "values": { "wingL": 1.2, "wingR": 1.2, "wingSwingL": 0, "wingSwingR": 0, "wingTwistL": 0, "wingTwistR": 0, "lean": -5, "tilt": 0, "twist": 0, "stretch": 0.16, "crest": 0.35 } },
+  { "name": "hug self", "values": { "wingL": 0.1, "wingR": 0.1, "wingSwingL": 1, "wingSwingR": 1, "wingTwistL": 0, "wingTwistR": 0, "lean": 7, "tilt": 0, "twist": 0, "stretch": -0.06, "crest": -0.1 } },
+  { "name": "bow", "values": { "wingL": 0.05, "wingR": 0.05, "wingSwingL": -0.5, "wingSwingR": -0.5, "wingTwistL": 0, "wingTwistR": 0, "lean": 32, "tilt": 0, "twist": 0, "stretch": -0.06, "crest": -0.2 } },
+  { "name": "thumbs up", "values": { "wingL": 0, "wingR": 0.6, "wingSwingL": 0, "wingSwingR": 0.55, "wingTwistL": 0, "wingTwistR": 0.7, "lean": -2, "tilt": -3, "twist": 0, "stretch": 0.02, "crest": 0.2 } },
+  { "name": "presenting", "values": { "wingL": 0.85, "wingR": 0, "wingSwingL": 0.25, "wingSwingR": 0, "wingTwistL": 0.9, "wingTwistR": 0, "lean": 3, "tilt": 0, "twist": 14, "stretch": 0.02, "crest": 0.15 } },
+  { "name": "tiptoe", "values": { "wingL": 0.05, "wingR": 0.05, "wingSwingL": -0.4, "wingSwingR": -0.4, "wingTwistL": 0, "wingTwistR": 0, "lean": -4, "tilt": 0, "twist": 0, "stretch": 0.22, "crest": 0.2 } },
+  { "name": "crouch", "values": { "wingL": 0.15, "wingR": 0.15, "wingSwingL": 0.6, "wingSwingR": 0.6, "wingTwistL": 0, "wingTwistR": 0, "lean": 14, "tilt": 0, "twist": 0, "stretch": -0.32, "crest": -0.3 } },
+  { "name": "proud", "values": { "wingL": 0.4, "wingR": 0.4, "wingSwingL": -0.7, "wingSwingR": -0.7, "wingTwistL": 0, "wingTwistR": 0, "lean": -14, "tilt": 0, "twist": 0, "stretch": 0.08, "crest": 0.4 } }
+]

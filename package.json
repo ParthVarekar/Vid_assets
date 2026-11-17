@@ -56,7 +56,9 @@
     "render": "node scripts/render-all.mjs",
     "render:master": "node scripts/render-all.mjs Master-16x9",
     "qa:stills": "node scripts/qa/review-stills.mjs",
-    "editor": "vite --config editor/vite.config.ts"
+    "editor": "vite --config editor/vite.config.ts",
+    "audio:ep01": "node --no-warnings scripts/audio/render-score.mjs ep01",
+    "docs:rig": "node --no-warnings scripts/docs/make-rig-reference.mjs --sheet"
   },
   "allowScripts": {
     "esbuild": false

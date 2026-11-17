@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { isCameraTrack } from "../../src/world3d/anim/clip";
 import { GROUPS, type Channel } from "../../src/world3d/rig/schema";
 import { CAMERA_PRESETS } from "../../src/world3d/set/cameraPresets";
-import { channelsFor, currentValue, endEdit, keyAt, setValue, setValues, toggleKey, useStore } from "./store";
+import { channelsFor, currentValue, endEdit, keyAt, set, setValue, setValues, toggleKey, useStore } from "./store";
 
 const KeyButton: React.FC<{ track: string; ch: Channel }> = ({ track, ch }) => {
   const keyed = useStore((s) => !!keyAt(s, track, ch.id));
@@ -55,19 +55,31 @@ const Row: React.FC<{ track: string; ch: Channel }> = ({ track, ch }) => {
 
 export const Inspector: React.FC = () => {
   const track = useStore((s) => s.track);
+  const search = useStore((s) => s.search);
   const [closed, setClosed] = useState<Record<string, boolean>>({ life: true });
+  const cam = isCameraTrack(track);
   const chans = channelsFor(track);
-  const groups = isCameraTrack(track) ? (["body"] as const) : GROUPS;
+  const groups = cam ? (["body"] as const) : GROUPS;
+  const q = search.trim().toLowerCase();
+  const matches = (c: Channel) => !q || `${c.label} ${c.id} ${c.help}`.toLowerCase().includes(q);
+  const title = track === "camera-9x16" ? "Camera (9:16)" : cam ? "Camera" : track[0].toUpperCase() + track.slice(1);
   return (
     <div className="inspector">
-      <div className="panel-title">{isCameraTrack(track) ? "Camera" : track[0].toUpperCase() + track.slice(1)}</div>
-      <div className="hint small">Hover a control for what it does. Double-click a slider to reset it.</div>
-      {isCameraTrack(track) ? (
+      <div className="panel-title">{title}</div>
+      <input
+        className="search"
+        placeholder="Search channels (wing, blink, lens…)"
+        value={search}
+        onChange={(e) => set({ search: e.target.value })}
+        onKeyDown={(e) => e.key === "Escape" && set({ search: "" })}
+      />
+      <div className="hint small">Hover a control for what it does. Double-click a slider to reset it. Press ? for shortcuts.</div>
+      {cam ? (
         <select
           value=""
           onChange={(e) => {
             const p = CAMERA_PRESETS[e.target.value];
-            if (p) setValues("camera", p.values, false, `Camera preset: ${e.target.value}`);
+            if (p) setValues(track, p.values, false, `Camera preset on ${track}: ${e.target.value}`);
           }}
           title="Key a named camera setup at the playhead"
         >
@@ -79,18 +91,19 @@ export const Inspector: React.FC = () => {
           ))}
         </select>
       ) : null}
-      {groups.map((g) => (
-        <div key={g} className="group">
-          <button className="group-head" onClick={() => setClosed((c) => ({ ...c, [g]: !c[g] }))}>
-            {closed[g] ? "▸" : "▾"} {isCameraTrack(track) ? "camera" : g}
-          </button>
-          {closed[g]
-            ? null
-            : chans
-                .filter((c) => (isCameraTrack(track) ? true : c.group === g))
-                .map((c) => <Row key={c.id} track={track} ch={c} />)}
-        </div>
-      ))}
+      {groups.map((g) => {
+        const list = chans.filter((c) => (cam ? true : c.group === g)).filter(matches);
+        if (q && !list.length) return null;
+        return (
+          <div key={g} className="group">
+            <button className="group-head" onClick={() => setClosed((c) => ({ ...c, [g]: !c[g] }))}>
+              {closed[g] && !q ? "▸" : "▾"} {cam ? "camera" : g}
+            </button>
+            {closed[g] && !q ? null : list.map((c) => <Row key={c.id} track={track} ch={c} />)}
+          </div>
+        );
+      })}
+      {q && groups.every((g) => !chans.filter((c) => (cam ? true : c.group === g)).some(matches)) ? <div className="hint small">No channel matches “{search}”.</div> : null}
     </div>
   );
 };
