@@ -415,6 +415,8 @@ export const buildBird = (cfg: BirdConfig, lights: FurLights, quality: "final" |
         gravity: F.gravity,
         sheen: F.sheen,
         tipLift,
+        // The editor's preview has half the shells, so it needs a deeper undercoat.
+        core: quality === "final" ? 0.35 : 0.5,
         rootAO: 0.6,
       },
       lights,

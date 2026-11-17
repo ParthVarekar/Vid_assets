@@ -32,6 +32,7 @@ const COMMON = /* glsl */ `
   uniform vec3 uGround;
   uniform float uSheen;
   uniform float uVelvet;
+  uniform float uCore;
   uniform float uSoft;
 
   vec3 hash33(vec3 p) {
@@ -223,6 +224,12 @@ const SHELL_FRAG = /* glsl */ `
       // shells: soft edges here let the skin show through as a flat pale disc.
       // Softness comes from shading and from the halo strands instead.
       alpha = 1.0 - smoothstep(r - fw, r + fw, d);
+      // Dense undercoat: below the core height every shell is solid, so the coat
+      // never reads as see-through; only the outer part is separate fibres. The
+      // height varies per fibre (not per clump: clump-sized steps show as pale
+      // blotches), so the core's top breaks up into fur texture.
+      float coreH = uCore * mix(0.65, 1.1, strandId);
+      alpha = max(alpha, 1.0 - step(coreH, h));
       if (alpha < 0.02) discard;
     }
     vec3 V = normalize(cameraPosition - vW);
@@ -256,6 +263,8 @@ export type FurParams = {
   sheen: number;
   /** Velvet rim glow at the silhouette (0 off). */
   velvet?: number;
+  /** Height (0..1 of the fur length) below which the coat is solid undercoat. */
+  core?: number;
   /** Tip colour multiplier (linear), applied toward the fibre tips. */
   tipLift: THREE.Color;
   rootAO: number;
@@ -287,6 +296,7 @@ export const createShellMaterial = (p: FurParams, lights: FurLights): THREE.Shad
       uRadius: { value: p.radius },
       uSheen: { value: p.sheen },
       uVelvet: { value: p.velvet ?? 0.35 },
+      uCore: { value: p.core ?? 0.35 },
       uTipLift: { value: p.tipLift },
       uRootAO: { value: p.rootAO },
     },
