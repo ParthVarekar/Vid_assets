@@ -14,6 +14,16 @@ Written 17 November 2026 by the session that built the film, the asset library, 
 
 ## HAIKU tasks (mechanical: run, copy, check, commit)
 
+### H0. Push the commit that is waiting (do this first)
+Commit `b5e9873` ("Add content kit, 3D icons and devices, Nib mascot and Studio set") is local only. The push failed because GitHub timed out from this machine. Retry:
+```bash
+git -c http.postBuffer=524288000 push origin main
+git status -sb | head -1
+```
+Done when the status line no longer says `ahead`. If it times out again, tell the user the network is blocking GitHub and stop; do not change any history.
+
+H1 below has already been checked: all counts matched (42/42/42/6/2/30/8). Skip it.
+
 ### H1. Check the content-kit render finished
 Run:
 ```bash
