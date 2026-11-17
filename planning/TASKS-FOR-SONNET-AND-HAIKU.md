@@ -24,6 +24,8 @@ Done when the status line no longer says `ahead`. If it times out again, tell th
 
 H1 below has already been checked: all counts matched (42/42/42/6/2/30/8). Skip it.
 
+**Status (Haiku session, 17 Nov):** H0 done (pushed). H2 done: sheets and Studio stills are in the library. The outfits sheet has four drawing problems, now listed under S2. H3 done: the storyboard is in the library, and the vertical frames confirm S3 is needed. H4 done. H5 done.
+
 ### H1. Check the content-kit render finished
 Run:
 ```bash
