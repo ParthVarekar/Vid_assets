@@ -16,6 +16,8 @@ import * as THREE from "three";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { seeded } from "../../utilities/rng";
 import { createShellMaterial, createStrandMaterial, strandTemplate, type FurLights } from "../fur/furMaterials";
+import type { Secondary } from "../anim/evaluate";
+import { restValues, type RigValues } from "../rig/schema";
 import type { BirdConfig } from "./config";
 
 const V3 = THREE.Vector3;
@@ -31,48 +33,10 @@ const smooth = (a: number, b: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 
-export type BirdPose = {
-  /** Where the eyes look, -1..1 (x right, y up). */
-  lookX: number;
-  lookY: number;
-  /** Upper lids: 0 open (rest) .. 1 closed. Per eye. */
-  blinkL: number;
-  blinkR: number;
-  /** Lid tilt: -1 angry .. +1 sad. */
-  lidTilt: number;
-  /** Lower lids raised (smiling eyes / squint), 0..1. */
-  squint: number;
-  /** Pupil size multiplier. */
-  pupil: number;
-  beakOpen: number;
-  /** Wing raise, 0 down .. 1 up and out. */
-  wingL: number;
-  wingR: number;
-  /** Whole-body lean forward/back and tilt left/right, degrees. */
-  lean: number;
-  tilt: number;
-  /** Squash (-) / stretch (+). */
-  stretch: number;
-  /** Fur puff multiplier (1 = groomed). */
-  fluff: number;
-};
-
-export const REST_POSE: BirdPose = {
-  lookX: 0,
-  lookY: 0,
-  blinkL: 0,
-  blinkR: 0,
-  lidTilt: 0,
-  squint: 0,
-  pupil: 1,
-  beakOpen: 0,
-  wingL: 0,
-  wingR: 0,
-  lean: 0,
-  tilt: 0,
-  stretch: 0,
-  fluff: 1,
-};
+/** A full set of rig values (see rig/schema.ts). */
+export type BirdPose = RigValues;
+export const REST_POSE: BirdPose = restValues();
+const NO_SECONDARY: Secondary = { crestPitch: 0, crestRoll: 0, wind: [0, 0, 0], wingLag: 0 };
 
 export type BuiltBird = {
   group: THREE.Group;
@@ -81,7 +45,7 @@ export type BuiltBird = {
   centre: THREE.Vector3;
   furMaterials: THREE.ShaderMaterial[];
   strandMaterials: THREE.ShaderMaterial[];
-  setPose: (p: BirdPose) => void;
+  setPose: (p: BirdPose, secondary?: Secondary) => void;
   dispose: () => void;
 };
 
@@ -443,11 +407,15 @@ export const buildBird = (cfg: BirdConfig, lights: FurLights, quality: "final" |
     const s = surfaceAt(shape, side * 74, el);
     return { side, bone: mk(`wing_${side < 0 ? "L" : "R"}`, s.p.clone().addScaledVector(s.n, cfg.fur.length * H * 0.55), mid, worlds), n: s.n };
   });
+  // Legs hang from the root, not the body: the hip follows the body each frame
+  // while the foot stays planted, so squash, lean and twist never slide the feet.
   const legBones = ([-1, 1] as const).map((side) => {
     const hip = new V3(side * R * 0.34, leg + H * 0.06, R * 0.08);
-    const bone = mk(`leg_${side < 0 ? "L" : "R"}`, hip, lo, worlds);
-    const foot = mk(`foot_${side < 0 ? "L" : "R"}`, new V3(side * R * 0.38, 0.012, R * 0.14), bone, worlds);
-    return { side, bone, foot, hip };
+    const bone = mk(`leg_${side < 0 ? "L" : "R"}`, hip, root, worlds);
+    const footRest = new V3(side * R * 0.38, 0.012, R * 0.14);
+    const foot = mk(`foot_${side < 0 ? "L" : "R"}`, footRest, root, worlds);
+    const hipInLo = hip.clone().sub(worlds.get(lo)!);
+    return { side, bone, foot, hip, footRest, hipInLo };
   });
 
   group.updateMatrixWorld(true);
@@ -870,15 +838,14 @@ export const buildBird = (cfg: BirdConfig, lights: FurLights, quality: "final" |
 
   // ---- Legs and feet --------------------------------------------------------
   const footMat = keep(new THREE.MeshPhysicalMaterial({ color: cfg.feet.color, roughness: 0.55, clearcoat: 0.35, clearcoatRoughness: 0.4, sheen: 0.3 }));
-  legBones.forEach(({ side, bone, foot }) => {
-    const ankleW = worlds.get(foot)!;
-    const hipW = worlds.get(bone)!;
-    const legLen = hipW.distanceTo(ankleW);
-    const legGeo = keep(new THREE.CapsuleGeometry(0.03 * H, legLen, 6, 12));
+  const legMeshes: THREE.Mesh[] = [];
+  const legRestLen = legBones[0].hip.distanceTo(legBones[0].footRest);
+  legBones.forEach(({ side, foot }) => {
+    // Unit-length capsule along Y, placed and stretched between hip and foot every frame.
+    const legGeo = keep(new THREE.CapsuleGeometry(0.03 * H, legRestLen, 6, 12));
     const legMesh = new THREE.Mesh(legGeo, footMat);
-    legMesh.position.copy(ankleW).sub(hipW).multiplyScalar(0.5);
-    legMesh.quaternion.setFromUnitVectors(new V3(0, 1, 0), hipW.clone().sub(ankleW).normalize());
-    bone.add(legMesh);
+    root.add(legMesh);
+    legMeshes.push(legMesh);
     const s = cfg.feet.size * H;
     [-0.42, 0, 0.42].forEach((ang) => {
       const toe = new THREE.Mesh(keep(new THREE.CapsuleGeometry(0.024 * s, 0.1 * s, 6, 12)), footMat);
@@ -954,33 +921,66 @@ export const buildBird = (cfg: BirdConfig, lights: FurLights, quality: "final" |
   // Lid hemispheres rotate about the eye's X axis; a rotation of r degrees puts the
   // lid edge at elevation -r on the front of the eye. Closed: both edges meet ~-36.
   const lidOpenAngle = (rest01: number) => -58 + 70 * rest01; // degrees, upper lid
-  const setPose = (p: BirdPose) => {
+  const hipTmp = new V3();
+  const yAxis = new V3(0, 1, 0);
+  const setPose = (p: BirdPose, sec: Secondary = NO_SECONDARY) => {
     root.traverse(reset);
     // Squash and stretch with volume preservation, centred low on the body.
     const sy = 1 + p.stretch;
     const sxz = 1 / Math.sqrt(Math.max(0.2, sy));
     lo.scale.set(sxz, sy, sxz);
-    mid.rotation.set(p.lean * 0.4 * deg, 0, -p.tilt * 0.4 * deg);
-    hi.rotation.set(p.lean * 0.6 * deg, 0, -p.tilt * 0.6 * deg);
+    // Lean, tilt and twist spread over the bend chain (lo -> mid -> hi).
+    lo.rotation.set(p.lean * 0.25 * deg, 0, -p.tilt * 0.2 * deg);
+    mid.rotation.set(p.lean * 0.35 * deg, p.twist * 0.4 * deg, -p.tilt * 0.35 * deg);
+    hi.rotation.set(p.lean * 0.4 * deg, p.twist * 0.6 * deg, -p.tilt * 0.45 * deg);
     eyeParts.forEach((e, k) => {
-      const blink = k === 0 ? p.blinkL : p.blinkR;
-      e.eye.rotation.set(-p.lookY * 22 * deg, p.lookX * 28 * deg, 0);
-      const restAngle = lidOpenAngle(E.lidRest);
-      const b01 = Math.max(0, Math.min(1, blink));
-      const upper = restAngle + (36 - restAngle) * b01 - p.lookY * 8 * (1 - b01);
       const side = k === 0 ? -1 : 1;
-      e.lidU.rotation.set(upper * deg, 0, side * p.lidTilt * 16 * deg);
-      const lower = 64 - 44 * p.squint - 26 * b01;
-      e.lidL.rotation.set(lower * deg, 0, -side * p.lidTilt * 6 * deg);
+      const blink = k === 0 ? p.blinkL : p.blinkR;
+      const tilt = k === 0 ? p.lidTiltL : p.lidTiltR;
+      e.eye.rotation.set(-p.lookY * 22 * deg, p.lookX * 28 * deg, 0);
+      const restAngle = lidOpenAngle(E.lidRest) - p.lidOpen * 26;
+      const b01 = Math.max(0, Math.min(1, blink));
+      // Upper lid follows the gaze vertically (it is what makes looks read).
+      const upper = restAngle + (36 - restAngle) * b01 - p.lookY * 10 * (1 - b01);
+      // Positive tilt raises the inner corner (worried), negative drops it (angry).
+      e.lidU.rotation.set(upper * deg, 0, -side * tilt * 18 * deg);
+      const lower = 64 - 44 * p.squint - 26 * b01 + p.lookY * 6;
+      e.lidL.rotation.set(lower * deg, 0, side * tilt * 5 * deg);
       e.pupil.scale.setScalar(p.pupil);
     });
     beakLo.rotation.x = p.beakOpen * 28 * deg;
     wingParts.forEach((w) => {
-      const raise = w.side < 0 ? p.wingL : p.wingR;
-      w.bone.rotation.set(0, 0, w.side * raise * 100 * deg);
+      const l = w.side < 0;
+      const raise = (l ? p.wingL : p.wingR) + sec.wingLag;
+      const swing = l ? p.wingSwingL : p.wingSwingR;
+      const twist = l ? p.wingTwistL : p.wingTwistR;
+      w.bone.rotation.set(-swing * 70 * deg, 0, w.side * raise * 100 * deg);
+      w.holder.rotateY(-w.side * twist * 70 * deg);
     });
+    crestBone.rotation.set(p.crest * 0.6 + sec.crestPitch, 0, -sec.crestRoll);
+
+    // Legs: hips ride the body, feet stay where the animator put them.
+    root.updateMatrixWorld(true);
+    legBones.forEach((lb, k) => {
+      const l = lb.side < 0;
+      const step = l ? p.stepL : p.stepR;
+      const lift = l ? p.liftL : p.liftR;
+      lo.localToWorld(hipTmp.copy(lb.hipInLo));
+      root.worldToLocal(hipTmp);
+      lb.bone.position.copy(hipTmp);
+      lb.foot.position.copy(lb.footRest).add(new V3(0, lift * 0.2 * H, step * 0.22 * H));
+      lb.foot.rotation.x = lift * 0.5;
+      const m = legMeshes[k];
+      const d = hipTmp.clone().sub(lb.foot.position);
+      m.position.copy(lb.foot.position).addScaledVector(d, 0.5);
+      m.quaternion.setFromUnitVectors(yAxis, d.clone().normalize());
+      m.scale.set(1, d.length() / legRestLen, 1);
+    });
+
     shellMat.uniforms.uFluff.value = p.fluff;
     strandMat.uniforms.uFluff.value = p.fluff;
+    (shellMat.uniforms.uWind.value as THREE.Vector3).set(...sec.wind);
+    (strandMat.uniforms.uWind.value as THREE.Vector3).set(...sec.wind);
   };
   setPose(REST_POSE);
 

@@ -4,6 +4,7 @@
 import { useThree } from "@react-three/fiber";
 import React, { useEffect, useLayoutEffect, useMemo } from "react";
 import * as THREE from "three";
+import type { Secondary } from "./anim/evaluate";
 import { buildBird, REST_POSE, type BirdPose } from "./characters/buildBird";
 import { BIRDS, type BirdId } from "./characters/config";
 import { furLightsFor, type LightRig } from "./lighting";
@@ -11,16 +12,18 @@ import { furLightsFor, type LightRig } from "./lighting";
 export type BirdProps = {
   id: BirdId;
   rig: LightRig;
-  pose?: Partial<BirdPose>;
+  /** Rig values (see rig/schema.ts); missing channels use their defaults. x/y/z/yaw place the bird. */
+  pose?: Partial<Record<string, number>>;
+  /** Follow-through and wind from anim/evaluate.ts. */
+  secondary?: Secondary;
+  /** Extra placement on top of the pose's x/y/z (e.g. lineup spacing). */
   position?: [number, number, number];
-  /** Facing, degrees around Y (0 faces the camera at +Z). */
+  /** Extra facing, degrees around Y (0 faces the camera at +Z). */
   yaw?: number;
   quality?: "final" | "preview";
-  /** Tips move with this world-space wind vector (scaled by fur length). */
-  wind?: [number, number, number];
 };
 
-export const Bird: React.FC<BirdProps> = ({ id, rig, pose, position = [0, 0, 0], yaw = 0, quality = "final", wind = [0, 0, 0] }) => {
+export const Bird: React.FC<BirdProps> = ({ id, rig, pose, secondary, position = [0, 0, 0], yaw = 0, quality = "final" }) => {
   const lights = useMemo(() => furLightsFor(rig), [rig]);
   const bird = useMemo(() => buildBird(BIRDS[id], lights, quality), [id, lights, quality]);
   useEffect(() => () => bird.dispose(), [bird]);
@@ -31,17 +34,15 @@ export const Bird: React.FC<BirdProps> = ({ id, rig, pose, position = [0, 0, 0],
 
   // Pose and per-frame uniforms, before the frame is drawn.
   useLayoutEffect(() => {
-    bird.setPose({ ...REST_POSE, ...pose });
+    bird.setPose(full, secondary);
     const px = (2 * Math.tan(((camera.fov ?? 30) * Math.PI) / 360)) / (size.height * gl.getPixelRatio());
-    for (const m of bird.strandMaterials) {
-      m.uniforms.uPixel.value = px;
-      (m.uniforms.uWind.value as THREE.Vector3).set(...wind);
-    }
-    for (const m of bird.furMaterials) (m.uniforms.uWind.value as THREE.Vector3).set(...wind);
+    for (const m of bird.strandMaterials) m.uniforms.uPixel.value = px;
   });
 
+  const full: BirdPose = { ...REST_POSE };
+  for (const k in pose) if (pose[k] !== undefined) full[k] = pose[k]!;
   return (
-    <group position={position} rotation={[0, (yaw * Math.PI) / 180, 0]}>
+    <group position={[position[0] + full.x, position[1] + full.y, position[2] + full.z]} rotation={[0, ((yaw + full.yaw) * Math.PI) / 180, 0]}>
       <primitive object={bird.group} />
     </group>
   );
