@@ -35,7 +35,7 @@ Needs Node 24+ and FFmpeg on PATH (for the web encodes only).
 
 - `src/timeline.ts` is the single clock (100 BPM, 18 frames a beat). Picture and score both read it, so they stay in sync.
 - `src/scenes/` six scenes; `src/compositions/` master and cutdown; `src/components/` line, quill, type, artefacts; `src/utilities/layout.ts` per-format layouts (9:16 and 1:1 are laid out natively, not cropped).
-- `src/kit/` video kit (lower thirds, captions, wipes, title and end cards), social templates and the site content they use; `src/three/` code-built 3D models; `src/mascot/` Nib the mascot, the puppet engine and the Studio set (see `asset-library/mascot/PUPPET-GUIDE.md`).
+- `src/kit/` video kit (lower thirds, captions, wipes, title and end cards), social templates and the site content they use; `src/three/` code-built 3D models. The 2D mascot (Nib) and its Studio set were retired in favour of the 3D birds; they remain in git history.
 - `src/world3d/` the 3D birds (Quill, Ink, Chalk): fur, rig, the Desk set, clips; `editor/` Puppet Studio, the browser animation editor (`npm run editor`); `content/episodes` animation clips and `content/poses` the pose library; `docs/` the animator guide, rig reference and character bible; `scripts/anim` clips written as code.
 - `asset-library/` every reusable image, vector, 3D model and code element, with `MOTION-RULES.md` and `CONTENT-KIT.md`.
 - `scripts/audio/` score synthesis; `scripts/qa/` contact sheets and audio analysis; `scripts/higgsfield/` optional generation script.

@@ -10,7 +10,6 @@ import { Composition, Folder, Still } from "remotion";
 import { LogoSting, STING_FRAMES } from "./compositions/LogoSting";
 import { Turntable, type TurntableProps } from "./compositions/Turntable";
 import { KitCompositions } from "./kit/KitCompositions";
-import { MascotCompositions } from "./mascot/MascotCompositions";
 import { EpisodeCompositions } from "./world3d/Episode";
 import { DeskPreview, type DeskPreviewProps } from "./world3d/set/DeskPreview";
 import { POSE_SHEET, PoseSheet, type PoseSheetProps } from "./world3d/PoseSheet";
@@ -79,7 +78,6 @@ export const RemotionRoot: React.FC = () => {
         />
       ))}
       <KitCompositions />
-      <MascotCompositions />
       <Folder name="ThreeD">
         <Composition
           id="Turntable"
