@@ -1,5 +1,7 @@
 # Remaining work, split by model
 
+> **Superseded:** this sheet covers the finished 2D phase. Current work is in `planning/TASKS-3D-BIRDS.md`.
+
 Written 17 November 2026 by the session that built the film, the asset library, the content kit, Nib and the Studio. The design-heavy work is done. What is left is assembly, checking and housekeeping, listed in the order to do it.
 
 **Ground rules for every task**

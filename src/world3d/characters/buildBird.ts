@@ -922,6 +922,7 @@ export const buildBird = (cfg: BirdConfig, lights: FurLights, quality: "final" |
   // lid edge at elevation -r on the front of the eye. Closed: both edges meet ~-36.
   const lidOpenAngle = (rest01: number) => -58 + 70 * rest01; // degrees, upper lid
   const hipTmp = new V3();
+  const loAboveBase = worlds.get(lo)!.y - leg;
   const yAxis = new V3(0, 1, 0);
   const setPose = (p: BirdPose, sec: Secondary = NO_SECONDARY) => {
     root.traverse(reset);
@@ -929,6 +930,8 @@ export const buildBird = (cfg: BirdConfig, lights: FurLights, quality: "final" |
     const sy = 1 + p.stretch;
     const sxz = 1 / Math.sqrt(Math.max(0.2, sy));
     lo.scale.set(sxz, sy, sxz);
+    // Pivot the squash at the body's base (it sits on the hips), not at the bone.
+    lo.position.y -= loAboveBase * (1 - sy);
     // Lean, tilt and twist spread over the bend chain (lo -> mid -> hi).
     lo.rotation.set(p.lean * 0.25 * deg, 0, -p.tilt * 0.2 * deg);
     mid.rotation.set(p.lean * 0.35 * deg, p.twist * 0.4 * deg, -p.tilt * 0.35 * deg);

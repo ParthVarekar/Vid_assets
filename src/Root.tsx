@@ -11,6 +11,7 @@ import { LogoSting, STING_FRAMES } from "./compositions/LogoSting";
 import { Turntable, type TurntableProps } from "./compositions/Turntable";
 import { KitCompositions } from "./kit/KitCompositions";
 import { MascotCompositions } from "./mascot/MascotCompositions";
+import { EpisodeCompositions } from "./world3d/Episode";
 import { GpuProbe } from "./world3d/GpuProbe";
 import { Lookdev, type LookdevProps } from "./world3d/Lookdev";
 import { Card, Lockup, Palette, type CardProps, type LockupProps } from "./compositions/Stills";
@@ -96,6 +97,7 @@ export const RemotionRoot: React.FC = () => {
           defaultProps={{ model: "logo-plinth", ground: "paper", spin: 60, elevation: 14 } satisfies TurntableProps}
         />
       </Folder>
+      <EpisodeCompositions />
       <Folder name="Birds-Lookdev">
         {(["quill", "ink", "chalk"] as const).map((b) => (
           <Composition

@@ -170,6 +170,41 @@ export const emptyClip = (name: string, cast: CastMember[] = [{ id: "quill", see
   tracks: {},
 });
 
+/**
+ * JSON for saving: readable and diff-friendly (one key per line, channels in
+ * schema order), so git diffs show exactly which keys changed.
+ */
+export const formatClip = (clip: Clip): string => {
+  const r = (n: number) => Math.round(n * 10000) / 10000;
+  const key = (k: Key) => {
+    const o: Record<string, unknown> = { f: k.f, v: r(k.v) };
+    if (k.i && k.i !== "bezier") o.i = k.i;
+    if (k.e) o.e = k.e.map(r);
+    return JSON.stringify(o).replace(/,/g, ", ").replace(/:/g, ": ");
+  };
+  const order = (track: string) => Object.keys(track === "camera" ? CAMERA_BY_ID : CHANNEL_BY_ID);
+  const lines: string[] = ["{"];
+  const head = { version: clip.version, name: clip.name, fps: clip.fps, duration: clip.duration, rig: clip.rig ?? "studio" };
+  for (const [k, v] of Object.entries(head)) lines.push(`  ${JSON.stringify(k)}: ${JSON.stringify(v)},`);
+  if (clip.audio) lines.push(`  "audio": ${JSON.stringify(clip.audio)},`);
+  if (clip.notes) lines.push(`  "notes": ${JSON.stringify(clip.notes)},`);
+  lines.push(`  "cast": ${JSON.stringify(clip.cast).replace(/,"/g, ', "').replace(/:/g, ": ").replace(/\},\{/g, "}, {")},`);
+  lines.push('  "tracks": {');
+  const tracks = Object.entries(clip.tracks).filter(([, t]) => Object.keys(t).length);
+  tracks.forEach(([tn, t], ti) => {
+    lines.push(`    ${JSON.stringify(tn)}: {`);
+    const chans = order(tn).filter((c) => t[c]?.length);
+    chans.forEach((c, ci) => {
+      lines.push(`      ${JSON.stringify(c)}: [`);
+      t[c].forEach((k, kk) => lines.push(`        ${key(k)}${kk < t[c].length - 1 ? "," : ""}`));
+      lines.push(`      ]${ci < chans.length - 1 ? "," : ""}`);
+    });
+    lines.push(`    }${ti < tracks.length - 1 ? "," : ""}`);
+  });
+  lines.push("  }", "}", "");
+  return lines.join("\n");
+};
+
 /** Basic validation, so hand-edited or LLM-written JSON fails loudly. */
 export const validateClip = (c: unknown): string[] => {
   const errs: string[] = [];

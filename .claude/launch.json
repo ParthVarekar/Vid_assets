@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["remotion", "studio", "--port", "3000", "--no-open"],
       "port": 3000
+    },
+    {
+      "name": "puppet-studio",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "editor"],
+      "port": 5174
     }
   ]
 }
