@@ -8,6 +8,7 @@ import type { Secondary } from "./anim/evaluate";
 import { buildBird, REST_POSE, type BirdPose } from "./characters/buildBird";
 import { BIRDS, type BirdId } from "./characters/config";
 import { furLightsFor, type LightRig } from "./lighting";
+import { useHDR } from "./set/assets";
 
 export type BirdProps = {
   id: BirdId;
@@ -83,29 +84,41 @@ const studioEnvironment = (rig: LightRig) => {
   return scene;
 };
 
-/** Standard lights matching a rig, plus a studio environment for reflections. */
+/**
+ * Standard lights matching a rig, plus an environment for reflections: the
+ * rig's HDRI when it has one (the Desk), else the softbox studio.
+ * The rig's shadow light casts soft shadows across the set.
+ */
 export const RigLights: React.FC<{ rig: LightRig }> = ({ rig }) => {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
+  const hdr = useHDR(rig.hdri ?? "");
   const env = useMemo(() => {
     const pm = new THREE.PMREMGenerator(gl);
-    const envScene = studioEnvironment(rig);
-    const tex = pm.fromScene(envScene, 0.0).texture;
+    let tex: THREE.Texture;
+    if (rig.hdri && hdr) {
+      tex = pm.fromEquirectangular(hdr).texture;
+    } else {
+      const envScene = studioEnvironment(rig);
+      tex = pm.fromScene(envScene, 0.0).texture;
+      envScene.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (m.isMesh) {
+          m.geometry.dispose();
+          (m.material as THREE.Material).dispose();
+        }
+      });
+    }
     pm.dispose();
-    envScene.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (m.isMesh) {
-        m.geometry.dispose();
-        (m.material as THREE.Material).dispose();
-      }
-    });
     return tex;
-  }, [gl, rig]);
+  }, [gl, rig, hdr]);
   useLayoutEffect(() => {
     scene.environment = env;
     scene.environmentIntensity = rig.envIntensity;
     gl.toneMapping = rig.toneMapping === "agx" ? THREE.AgXToneMapping : THREE.NeutralToneMapping;
     gl.toneMappingExposure = rig.exposure;
+    gl.shadowMap.enabled = true;
+    gl.shadowMap.type = THREE.PCFShadowMap; // r187: soft PCF is PCF + shadow.radius
     return () => {
       scene.environment = null;
     };
@@ -114,8 +127,31 @@ export const RigLights: React.FC<{ rig: LightRig }> = ({ rig }) => {
   return (
     <>
       <hemisphereLight args={[rig.sky, rig.ground, rig.ambient]} />
-      {rig.lights.map((l, i) => (
-        <directionalLight key={i} position={l.from} color={l.color} intensity={l.intensity} />
+      {rig.lights.map((l, i) => {
+        const shadow = rig.shadowLight === i;
+        const p = new THREE.Vector3(...l.from).normalize().multiplyScalar(30);
+        return (
+          <directionalLight
+            key={i}
+            position={[p.x, p.y, p.z]}
+            color={l.color}
+            intensity={l.intensity}
+            castShadow={shadow}
+            shadow-mapSize={[2048, 2048]}
+            shadow-bias={-0.0004}
+            shadow-normalBias={0.03}
+            shadow-radius={6}
+            shadow-camera-left={-12}
+            shadow-camera-right={12}
+            shadow-camera-top={12}
+            shadow-camera-bottom={-12}
+            shadow-camera-near={1}
+            shadow-camera-far={70}
+          />
+        );
+      })}
+      {(rig.points ?? []).map((p, i) => (
+        <pointLight key={`p${i}`} position={p.position} color={p.color} intensity={p.intensity} distance={p.distance} decay={2} />
       ))}
     </>
   );

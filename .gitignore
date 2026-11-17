@@ -13,3 +13,6 @@ qa/stills/
 # Reinstallable with: npx skills add (see skills-lock.json)
 .agents/
 qa/sheets/lib-*.jpg
+
+# Poly Haven raw downloads (re-fetch with node scripts/set/fetch-polyhaven.mjs)
+assets-raw/

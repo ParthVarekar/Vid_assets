@@ -12,6 +12,8 @@ import { evaluateBird } from "./anim/evaluate";
 import { Bird, ContactShadow, RigLights } from "./Bird";
 import { BIRDS } from "./characters/config";
 import { RIGS, STUDIO } from "./lighting";
+import { DeskSet } from "./set/DeskSet";
+import { Lens } from "./Lens";
 
 /** CSS backdrop behind the transparent canvas (the studio sweep, until the Desk set). */
 export const STUDIO_BACKDROP = "radial-gradient(ellipse 75% 70% at 50% 38%, #FBF7EF 0%, #EFE7DA 55%, #D9CDBA 100%)";
@@ -25,8 +27,8 @@ export const ShotCamera: React.FC<{ clip: Clip; frame: number }> = ({ clip, fram
     const sh = c.shake;
     const n = (seed: number) => noise1(frame / 9, seed) * sh;
     camera.fov = c.fov;
-    camera.near = 0.02;
-    camera.far = 80;
+    camera.near = 0.05;
+    camera.far = 500;
     camera.aspect = size.width / Math.max(1, size.height);
     camera.position.set(c.px + n(1) * 0.06, c.py + n(2) * 0.05, c.pz);
     camera.up.set(Math.sin((c.roll * Math.PI) / 180), Math.cos((c.roll * Math.PI) / 180), 0);
@@ -42,14 +44,20 @@ export type BirdSceneProps = {
   quality?: "final" | "preview";
   /** "shot": the clip's camera drives the view. "free": leave the camera alone (editor orbit). */
   camera?: "shot" | "free";
+  /** Lens effects (depth of field, bloom). The editor turns them off at preview quality for speed. */
+  lens?: boolean;
 };
 
-export const BirdScene: React.FC<BirdSceneProps> = ({ clip, frame, quality = "final", camera = "shot" }) => {
+export const BirdScene: React.FC<BirdSceneProps> = ({ clip, frame, quality = "final", camera = "shot", lens = true }) => {
   const rig = RIGS[clip.rig ?? "studio"] ?? STUDIO;
+  const cam = sampleCamera(clip, frame);
+  const focus = cam.focus > 0 ? cam.focus : Math.hypot(cam.px - cam.tx, cam.py - cam.ty, cam.pz - cam.tz);
   return (
     <>
       {camera === "shot" ? <ShotCamera clip={clip} frame={frame} /> : null}
       <RigLights rig={rig} />
+      {clip.set === "desk" ? <DeskSet rig={rig} /> : null}
+      {lens && cam.blur > 0 ? <Lens focus={focus} blur={cam.blur} /> : null}
       {clip.cast.map((m) => {
         const { values, secondary } = evaluateBird(clip, m.id, frame, m.seed ?? 1);
         // The shadow tightens and fades as the bird leaves the ground.

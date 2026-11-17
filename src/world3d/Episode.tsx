@@ -5,10 +5,15 @@
 
 import { ThreeCanvas } from "@remotion/three";
 import React from "react";
-import { AbsoluteFill, Composition, Folder, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Composition, Folder, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { setAssetEnv } from "./set/assets";
 import type { Clip } from "./anim/clip";
 import { BirdScene, STUDIO_BACKDROP } from "./BirdScene";
 import { EPISODES } from "./episodes";
+
+// Remotion: assets come from public/ via staticFile. Loaders suspend, and
+// ThreeCanvas waits (delayRender) until everything inside has loaded.
+setAssetEnv({ url: (p) => staticFile(p) });
 
 export type EpisodeProps = { clip: Clip; quality: "final" | "preview" };
 
@@ -16,7 +21,7 @@ export const Episode: React.FC<EpisodeProps> = ({ clip, quality }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   return (
-    <AbsoluteFill style={{ background: STUDIO_BACKDROP }}>
+    <AbsoluteFill style={{ background: clip.set === "desk" ? "#1a1612" : STUDIO_BACKDROP }}>
       <ThreeCanvas width={width} height={height} gl={{ antialias: true, alpha: true, preserveDrawingBuffer: true }} camera={{ fov: 22, position: [0, 1.1, 9] }}>
         <BirdScene clip={clip} frame={frame} quality={quality} />
       </ThreeCanvas>

@@ -30,6 +30,8 @@ export type Clip = {
   fps: number;
   duration: number;
   rig?: string;
+  /** The world: "studio" (plain sweep) or "desk" (the Desk diorama). */
+  set?: "studio" | "desk";
   cast: CastMember[];
   tracks: Record<string, Track>;
   /** Optional audio for talk timing, relative to public/. */
@@ -184,7 +186,7 @@ export const formatClip = (clip: Clip): string => {
   };
   const order = (track: string) => Object.keys(track === "camera" ? CAMERA_BY_ID : CHANNEL_BY_ID);
   const lines: string[] = ["{"];
-  const head = { version: clip.version, name: clip.name, fps: clip.fps, duration: clip.duration, rig: clip.rig ?? "studio" };
+  const head = { version: clip.version, name: clip.name, fps: clip.fps, duration: clip.duration, set: clip.set ?? "studio", rig: clip.rig ?? "studio" };
   for (const [k, v] of Object.entries(head)) lines.push(`  ${JSON.stringify(k)}: ${JSON.stringify(v)},`);
   if (clip.audio) lines.push(`  "audio": ${JSON.stringify(clip.audio)},`);
   if (clip.notes) lines.push(`  "notes": ${JSON.stringify(clip.notes)},`);

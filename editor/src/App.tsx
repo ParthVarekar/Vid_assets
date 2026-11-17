@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { emptyClip, type CastMember } from "../../src/world3d/anim/clip";
+import { RIGS } from "../../src/world3d/lighting";
 import type { BirdId } from "../../src/world3d/characters/config";
 import { listEpisodes, loadEpisode, saveEpisode } from "./api";
 import { Inspector } from "./Inspector";
@@ -106,6 +107,17 @@ const TopBar: React.FC = () => {
       <button className={s.dirty ? "primary" : ""} onClick={save} title="Ctrl+S">
         Save{s.dirty ? " •" : ""}
       </button>
+      <select value={s.clip.set ?? "studio"} onChange={(e) => setClipMeta({ set: e.target.value as "studio" | "desk", rig: e.target.value === "desk" && !(s.clip.rig ?? "").startsWith("desk") ? "desk-day" : e.target.value === "studio" ? "studio" : s.clip.rig })} title="The world the birds are in">
+        <option value="studio">Set: studio sweep</option>
+        <option value="desk">Set: the Desk</option>
+      </select>
+      <select value={s.clip.rig ?? "studio"} onChange={(e) => setClipMeta({ rig: e.target.value })} title="Lighting / time of day">
+        {Object.keys(RIGS).map((r) => (
+          <option key={r} value={r}>
+            Light: {r}
+          </option>
+        ))}
+      </select>
       <label title="Length in frames (30 per second)">
         frames <input className="num" type="number" value={s.clip.duration} min={10} max={9000} onChange={(e) => setClipMeta({ duration: Math.max(10, +e.target.value || 10) })} />
       </label>

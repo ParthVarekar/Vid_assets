@@ -82,6 +82,8 @@ const saveApi = (): Plugin => ({
 
 export default defineConfig({
   root: __dirname,
+  // Serve the project's public/ (3D props, HDRIs, textures, brand images) at /.
+  publicDir: path.join(ROOT, "public"),
   plugins: [react(), saveApi()],
   server: { port: 5174, strictPort: false, fs: { allow: [ROOT] } },
   build: { outDir: path.join(ROOT, "out", "editor-build"), emptyOutDir: true },

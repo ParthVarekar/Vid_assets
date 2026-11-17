@@ -112,5 +112,7 @@ export const CAMERA_CHANNELS: Channel[] = [
   { id: "fov", label: "Lens (fov)", group: "body", min: 8, max: 70, default: 22, unit: "deg", help: "Vertical field of view. Small = telephoto, flatter and more cinematic." },
   { id: "roll", label: "Roll", group: "body", min: -30, max: 30, default: 0, unit: "deg", help: "Dutch angle." },
   { id: "shake", label: "Shake", group: "body", min: 0, max: 1, default: 0, help: "Handheld wobble amount." },
+  { id: "blur", label: "Depth of field", group: "body", min: 0, max: 8, default: 0, help: "Background/foreground blur (bokeh size). 0 = everything sharp. 2-4 reads as miniature." },
+  { id: "focus", label: "Focus distance", group: "body", min: 0, max: 40, default: 0, unit: "u", help: "Distance from the camera that is sharp. 0 = focus on the target point." },
 ];
 export const CAMERA_BY_ID: Record<string, Channel> = Object.fromEntries(CAMERA_CHANNELS.map((c) => [c.id, c]));

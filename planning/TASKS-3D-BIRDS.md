@@ -30,7 +30,7 @@ Curves for the selected channels, with draggable bezier easing handles and inter
 ### O4. Gate 2 rig demo (6 s) and parity check
 Hand-author `content/episodes/rig-demo.anim.json`: expressions, a gesture, squash and stretch, a hop, a few steps. Render it, check the editor frame matches the Remotion frame, and review the motion from frame strips.
 
-### O5. Gate 3 set: "The Desk"
+### O5. Gate 3 set: "The Desk" (done, 17 Nov)
 Layout of the miniature desk diorama, brand props built in code (fountain pen, inkpot, sketchbook with red-chalk wireframes, laptop showing the site), the window with the Mumbai skyline, day/golden/night light rigs, camera presets, depth of field. **Needs S3 (Poly Haven props) first.**
 
 ### O6. Gate 4 first episode
@@ -58,7 +58,7 @@ Then add a Remotion still `PoseSheet-Expressions` and `PoseSheet-Gestures` that 
 
 Done when a saved pose survives a page reload and applies correctly to another bird.
 
-### S3. Poly Haven props pipeline
+### S3. Poly Haven props pipeline (done by Opus, 17 Nov)
 - Install `@gltf-transform/cli@4.5`.
 - Write `scripts/set/fetch-polyhaven.mjs`. It downloads the 1k glTF of each approved model into `assets-raw/polyhaven/<id>/` (gitignored), using the API `https://api.polyhaven.com/files/<id>`.
 - Then it optimises each model into `public/3d/props/<id>.glb`: `gltf-transform optimize` with texture resize 1024, webp textures and meshopt.
@@ -120,3 +120,14 @@ Copy the Gate 1 sheets and the pose sheets into `asset-library/characters/` (ima
   - **O4:** `content/episodes/rig-demo.anim.json` (6.5 s), written with the motion helpers in `scripts/anim/authoring.mjs` (`hop`, `walk`, `pose`, `shake`, `say`, `camera`). Editor/Remotion parity checked at frame 150.
   - **Measured on the Intel iGPU, 1249×702 viewport:** 46 ms/frame at preview fur, 115 ms at final.
   - **Next for Sonnet:** S1, then S2/S4/S3/S5. **Next for Haiku:** H1 (removal), H2, H3. **Next Opus task:** O5 (the set) once S3 lands.
+- **17 Nov, Opus (asked to take S3 too):** S3 and O5 done.
+  - **S3:** `scripts/set/fetch-polyhaven.mjs`; 9 props + HDRI + wall texture = 5.3 MB in `public/3d/`. Credits are in `public/3d/props/CREDITS.md`. Loaders in `src/world3d/set/assets.ts` use React Suspense, so Remotion waits for assets.
+  - **O5:** `src/world3d/set/DeskSet.tsx`.
+    - **Scene:** sketchbook floor, fountain pen, inkpot, modern laptop, window with the Mumbai/Sea Link view (`paintings.ts`), and the room.
+    - **Light rigs:** `desk-day`, `desk-golden`, `desk-night` in `lighting.ts`, with shadows.
+    - **Lens:** depth of field and bloom (`Lens.tsx`), with new camera channels `blur` and `focus`.
+    - **Camera presets:** `set/cameraPresets.ts` (wide, establishing, hero, closeup, screen, reverse, overhead, vertical).
+    - **Review:** `DeskPreview` still plus `scripts/set/render-set-sheet.mjs`.
+    - **Clips** pick the world with `"set": "desk"` and `"rig": "desk-golden"`. The editor has Set/Light pickers and a camera-preset menu.
+  - **Speed (Intel iGPU):** about 6 s per final frame of the Desk with lens; the editor at preview quality takes about 200 ms per frame.
+  - **Next:** S1 (poses) and S5 (vertical follow camera) for Sonnet; H1–H3 for Haiku; O6 (first episode on the Desk) for Opus.

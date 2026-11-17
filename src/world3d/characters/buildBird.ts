@@ -196,7 +196,7 @@ const FEATHER_FRAG = /* glsl */ `
     }
     c += base * uSky * 0.9;
     c *= mix(0.92, 1.05, gap);
-    gl_FragColor = vec4(c, alpha);
+    gl_FragColor = vec4((any(isnan(c)) || any(isinf(c))) ? vec3(0.0) : clamp(c, 0.0, 32.0), alpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }
@@ -467,6 +467,25 @@ export const buildBird = (cfg: BirdConfig, lights: FurLights, quality: "final" |
   group.add(shellMesh);
   shellMesh.bind(skeleton);
   keep(shellGeo);
+
+  // Shadow caster: the fur shaders cannot cast shadows, so an invisible hull,
+  // inflated to the fur's mid-length, casts the bird's shadow onto the set.
+  const hullGeo = keep(body.clone());
+  {
+    const hp = hullGeo.getAttribute("position");
+    const hn = hullGeo.getAttribute("normal");
+    const g4 = hullGeo.getAttribute("aGroom");
+    for (let i = 0; i < hp.count; i++) {
+      const d = F.length * H * 0.6 * g4.getX(i);
+      hp.setXYZ(i, hp.getX(i) + hn.getX(i) * d, hp.getY(i) + hn.getY(i) * d, hp.getZ(i) + hn.getZ(i) * d);
+    }
+  }
+  const hull = new THREE.SkinnedMesh(hullGeo, keep(new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false })));
+  hull.castShadow = true;
+  hull.frustumCulled = false;
+  hull.name = "shadow-hull";
+  group.add(hull);
+  hull.bind(skeleton);
 
   /** Grow shell fur on any rigid part (wings, lids). `flow` gives the combing direction from a normal. */
   const furCoat = (src: THREE.BufferGeometry, lenFactor: number, color: THREE.Color, flow: (n: THREE.Vector3) => THREE.Vector3) => {

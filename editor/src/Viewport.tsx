@@ -3,7 +3,7 @@
 
 import { OrbitControls, TransformControls } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { Suspense, useLayoutEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { BirdScene, STUDIO_BACKDROP } from "../../src/world3d/BirdScene";
 import { BIRDS, type BirdId } from "../../src/world3d/characters/config";
@@ -42,6 +42,20 @@ const Invalidator: React.FC = () => {
   });
   return null;
 };
+
+/** Keeps the editor alive if an asset fails to load; shows the error instead. */
+class SceneErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: string | null }> {
+  state = { error: null as string | null };
+  static getDerivedStateFromError(e: unknown) {
+    return { error: String((e as Error)?.message ?? e) };
+  }
+  componentDidCatch(e: unknown) {
+    set({ status: `Scene error: ${String((e as Error)?.message ?? e)}` });
+  }
+  render() {
+    return this.state.error ? null : this.props.children;
+  }
+}
 
 /** Invisible capsule per bird: click to select. */
 const PickProxies: React.FC = () => {
@@ -199,10 +213,15 @@ export const Viewport: React.FC = () => {
             frameloop="demand"
             dpr={[1, 1.5]}
             gl={{ antialias: true, alpha: true }}
-            camera={{ fov: 22, position: [0, 1.1, 9], near: 0.02, far: 80 }}
+            camera={{ fov: 22, position: [0, 1.1, 9], near: 0.02, far: 500 }}
           >
             <Invalidator />
-            <BirdScene clip={clip} frame={frame} quality={quality} camera={cameraMode} />
+            {/* The editor's own Suspense boundary: the Desk's props load in the background. */}
+            <SceneErrorBoundary>
+              <Suspense fallback={null}>
+                <BirdScene clip={clip} frame={frame} quality={quality} camera={cameraMode} lens={quality === "final"} />
+              </Suspense>
+            </SceneErrorBoundary>
             {cameraMode === "free" ? <OrbitControls makeDefault target={[0, 0.6, 0]} /> : null}
             <PickProxies />
             <SelectionRing />

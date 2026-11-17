@@ -12,6 +12,7 @@ import { Turntable, type TurntableProps } from "./compositions/Turntable";
 import { KitCompositions } from "./kit/KitCompositions";
 import { MascotCompositions } from "./mascot/MascotCompositions";
 import { EpisodeCompositions } from "./world3d/Episode";
+import { DeskPreview, type DeskPreviewProps } from "./world3d/set/DeskPreview";
 import { GpuProbe } from "./world3d/GpuProbe";
 import { Lookdev, type LookdevProps } from "./world3d/Lookdev";
 import { Card, Lockup, Palette, type CardProps, type LockupProps } from "./compositions/Stills";
@@ -98,6 +99,10 @@ export const RemotionRoot: React.FC = () => {
         />
       </Folder>
       <EpisodeCompositions />
+      <Folder name="Desk-Set">
+        <Still id="DeskPreview" component={DeskPreview} width={1920} height={1080} defaultProps={{ rig: "desk-day", preset: "wide", quality: "final" } satisfies DeskPreviewProps} />
+        <Still id="DeskPreview-9x16" component={DeskPreview} width={1080} height={1920} defaultProps={{ rig: "desk-golden", preset: "vertical", quality: "final" } satisfies DeskPreviewProps} />
+      </Folder>
       <Folder name="Birds-Lookdev">
         {(["quill", "ink", "chalk"] as const).map((b) => (
           <Composition

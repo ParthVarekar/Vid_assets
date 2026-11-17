@@ -63,6 +63,13 @@ const COMMON = /* glsl */ `
     toCenter = bestR;
   }
 
+  // NaN/Inf guard: one bad pixel is invisible when drawn directly, but blur and
+  // bloom spread it over the whole frame. Clamp also keeps half-float targets finite.
+  vec3 safeColor(vec3 c) {
+    if (any(isnan(c)) || any(isinf(c))) return vec3(0.0);
+    return clamp(c, 0.0, 32.0);
+  }
+
   float kk(vec3 T, vec3 H, float e) {
     float th = dot(T, H);
     return pow(sqrt(max(0.0, 1.0 - th * th)), e);
@@ -217,7 +224,7 @@ const SHELL_FRAG = /* glsl */ `
     if (h > 0.0) base *= mix(1.0, 0.8, smoothstep(0.3, 0.8, clumpDist) * (1.0 - 0.5 * h));
     base = mix(base, base * uTipLift, h * h);
     vec3 col = furShade(base, N, T, V, h) * ao;
-    gl_FragColor = vec4(col, alpha);
+    gl_FragColor = vec4(safeColor(col), alpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }
@@ -387,7 +394,7 @@ const STRAND_FRAG = /* glsl */ `
     base = mix(base, base * uTipLift, vT);
     float ao = mix(uRootAO, 1.0, pow(vT, 0.6));
     vec3 col = furShade(base, N, normalize(vTan), V, 0.6 + 0.4 * vT) * ao;
-    gl_FragColor = vec4(col, alpha);
+    gl_FragColor = vec4(safeColor(col), alpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }

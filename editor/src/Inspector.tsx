@@ -3,7 +3,8 @@
 
 import React, { useState } from "react";
 import { GROUPS, type Channel } from "../../src/world3d/rig/schema";
-import { channelsFor, currentValue, endEdit, keyAt, setValue, toggleKey, useStore } from "./store";
+import { CAMERA_PRESETS } from "../../src/world3d/set/cameraPresets";
+import { channelsFor, currentValue, endEdit, keyAt, setValue, setValues, toggleKey, useStore } from "./store";
 
 const KeyButton: React.FC<{ track: string; ch: Channel }> = ({ track, ch }) => {
   const keyed = useStore((s) => !!keyAt(s, track, ch.id));
@@ -60,6 +61,23 @@ export const Inspector: React.FC = () => {
     <div className="inspector">
       <div className="panel-title">{track === "camera" ? "Camera" : track[0].toUpperCase() + track.slice(1)}</div>
       <div className="hint small">Hover a control for what it does. Double-click a slider to reset it.</div>
+      {track === "camera" ? (
+        <select
+          value=""
+          onChange={(e) => {
+            const p = CAMERA_PRESETS[e.target.value];
+            if (p) setValues("camera", p.values, false, `Camera preset: ${e.target.value}`);
+          }}
+          title="Key a named camera setup at the playhead"
+        >
+          <option value="">Camera preset…</option>
+          {Object.entries(CAMERA_PRESETS).map(([k, p]) => (
+            <option key={k} value={k} title={p.label}>
+              {k}: {p.label}
+            </option>
+          ))}
+        </select>
+      ) : null}
       {groups.map((g) => (
         <div key={g} className="group">
           <button className="group-head" onClick={() => setClosed((c) => ({ ...c, [g]: !c[g] }))}>
